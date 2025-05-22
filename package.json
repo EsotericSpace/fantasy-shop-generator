@@ -2,7 +2,7 @@
   "name": "dndshop-tailwind-app",
   "version": "0.0.1",
   "private": true,
-  "homepage": "https://esotericspace.github.io/fantasy-shop-generator",
+  "homepage": "./",
   "scripts": {
     "dev": "vite",
     "build": "npx vite build",

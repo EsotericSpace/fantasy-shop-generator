@@ -2,10 +2,13 @@
   "name": "dndshop-tailwind-app",
   "version": "0.0.1",
   "private": true,
+  "homepage": "https://esotericspace.github.io/fantasy-shop-generator",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "react": "^18.2.0",
@@ -20,4 +23,8 @@
     "typescript": "^4.9.3",
     "vite": "^6.3.5"
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 69367dc2faea41dac3c18aefa2cf5d61f552ec33

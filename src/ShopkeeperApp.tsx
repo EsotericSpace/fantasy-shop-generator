@@ -421,6 +421,7 @@ function ShopkeeperGenerator() {
   const [inventorySort, setInventorySort] = useState('alpha');
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const getCurrentPricingText = () => {
     // Handle case where selectedPricingStyle is still 'random' or invalid
     if (selectedPricingStyle === 'random') return 'Standard';
@@ -618,7 +619,7 @@ const shopNouns = {
   'Blacksmith': ['Forge', 'Anvil', 'Hammer', 'Blade', 'Steel', 'Iron', 'Weapon', 'Smithy', 'Ironworks', 'Foundry'],
   'Alchemist': ['Potion', 'Brew', 'Elixir', 'Concoctions', 'Vial', 'Mixture', 'Philter', 'Experiments', 'Apothecary', 'Distillery'],
   'Mystic Goods': ['Curio', 'Wonder', 'Arcanum', 'Glyph', 'Rune', 'Enchantment', 'Sigil', 'Spellwork', 'Charm', 'Binding', 'Sanctum', 'Oracle'],
-  'Exotic Goods': ['Oddities', 'Curiosities', 'Wonder', 'Rarities', 'Import', 'Goods', 'Treasure', 'Magnificent', 'Bazaar', 'Gallery'],
+  'Exotic Goods': ['Oddities', 'Curiosities', 'Wonders', 'Rarities', 'Imports', 'Goods', 'Treasures', 'Magnificent', 'Bazaar', 'Gallery'],
   'Jeweler': ['Gem', 'Jewel', 'Ring', 'Crown', 'Gold', 'Bauble', 'Ornament', 'Boutique', 'Atelier', 'Collection']
 };
 
@@ -751,7 +752,6 @@ const shopItems = {
     { name: 'Arrows (20)', price: '1 gp', level: 'Common', details: 'Standard arrows for shortbows and longbows.' },
     { name: 'Blowgun', price: '10 gp', level: 'Common', details: '1 Piercing, Ammunition, Loading, (Range 25/100)' },
     { name: 'Blowgun Needles (50)', price: '1 gp', level: 'Common', details: 'Thin needles for blowguns.' },
-    { name: 'Breastplate', price: '400 gp', level: 'Common', details: 'AC 14 + Dex modifier (max 2), Medium Armor' },
     { name: 'Bronze Battleaxe', price: '8 gp', level: 'Common', details: '1d8 Slashing, Versatile 1d10' },
     { name: 'Bronze Breastplate', price: '300 gp', level: 'Common', details: 'AC 14 + Dex (max 2)' },
     { name: 'Bronze Chain Shirt', price: '38 gp', level: 'Common', details: 'AC 13 + Dex (max 2)' },
@@ -2066,50 +2066,83 @@ const closeAllDropdowns = () => {
 
 // Get color classes based on rarity level
 const getRarityColors = (level) => {
-  switch (level.toLowerCase()) {
-    case 'common':
-      return {
+  const baseColors = {
+    common: {
+      light: {
         text: 'text-stone-500',
         textLight: 'text-stone-500', 
         textIcon: 'text-stone-500',
-        background: 'bg-stone-50 border-stone-500 hover:bg-stone-100'
-      };
-    case 'uncommon':
-      return {
+        background: 'bg-stone-50 border-stone-400 hover:bg-stone-100'
+      },
+      dark: {
+        text: 'text-gray-300',
+        textLight: 'text-gray-400',
+        textIcon: 'text-gray-400',
+        background: 'bg-gray-700 border-gray-600 hover:bg-gray-600'
+      }
+    },
+    uncommon: {
+      light: {
         text: 'text-cyan-700',
         textLight: 'text-cyan-700',
         textIcon: 'text-cyan-700',
         background: 'bg-teal-50 border-cyan-700 hover:bg-teal-100'
-      };
-    case 'rare':
-      return {
+      },
+      dark: {
+        text: 'text-teal-300',
+        textLight: 'text-teal-400',
+        textIcon: 'text-teal-400',
+        background: 'bg-teal-900 border-teal-600 hover:bg-teal-800'
+      }
+    },
+    rare: {
+      light: {
         text: 'text-indigo-600',
         textLight: 'text-indigo-600',
         textIcon: 'text-indigo-600',
         background: 'bg-violet-50 border-indigo-600 hover:bg-violet-100'
-      };
-    case 'very rare':
-      return {
+      },
+      dark: {
+        text: 'text-indigo-300',
+        textLight: 'text-indigo-400',
+        textIcon: 'text-indigo-400',
+        background: 'bg-indigo-900 border-indigo-600 hover:bg-indigo-800'
+      }
+    },
+    'very rare': {
+      light: {
         text: 'text-rose-500',
         textLight: 'text-rose-500',
         textIcon: 'text-rose-500',
         background: 'bg-pink-50 border-rose-500 hover:bg-pink-100'
-      };
-    case 'legendary':
-      return {
+      },
+      dark: {
+        text: 'text-rose-300',
+        textLight: 'text-rose-400',
+        textIcon: 'text-rose-400',
+        background: 'bg-rose-900 border-rose-600 hover:bg-rose-800'
+      }
+    },
+    legendary: {
+      light: {
         text: 'text-yellow-600',
         textLight: 'text-yellow-600',
         textIcon: 'text-yellow-600',
         background: 'bg-amber-50 border-yellow-600 hover:bg-amber-100'
-      };
-    default:
-      return {
-        text: 'text-stone-500',
-        textLight: 'text-stone-500',
-        textIcon: 'text-stone-500',
-        background: 'bg-stone-50 border-stone-500 hover:bg-stone-100'
-      };
-  }
+      },
+      dark: {
+        text: 'text-yellow-300',
+        textLight: 'text-yellow-400',
+        textIcon: 'text-yellow-400',
+        background: 'bg-yellow-900 border-yellow-600 hover:bg-yellow-800'
+      }
+    }
+  };
+
+  const normalizedLevel = level.toLowerCase();
+  const colorSet = baseColors[normalizedLevel] || baseColors.common;
+  
+  return isDarkMode ? colorSet.dark : colorSet.light;
 };
 
 const setting = {
@@ -2511,68 +2544,87 @@ const generateShopkeeper = (
       ? shopTypes[Math.floor(Math.random() * shopTypes.length)]
       : customShopType;
 
-  if (isLocked && shopkeeper) {
-    if (!shopkeeper.priceModifier || !shopkeeper.name) {
-      console.warn("Corrupt locked shopkeeper. Resetting.");
-      setIsLocked(false);
-      generateShopkeeper('random', customSettlementSize);
-      return;
+    if (isLocked && shopkeeper) {
+        if (!shopkeeper.priceModifier || !shopkeeper.name) {
+          console.warn("Corrupt locked shopkeeper. Resetting.");
+          setIsLocked(false);
+          generateShopkeeper('random', customSettlementSize, pricingStylePreference);
+          return;
+        }
+
+        // Handle pricing for locked shopkeeper
+        let pricingStyleObj;
+        let actualStyleIndex;
+        if (pricingStylePreference === 'random') {
+          actualStyleIndex = Math.floor(Math.random() * pricingStyles.length);
+          pricingStyleObj = pricingStyles[actualStyleIndex];
+        } else {
+          actualStyleIndex = parseInt(pricingStylePreference);
+          pricingStyleObj = pricingStyles[actualStyleIndex];
+        }
+        const priceModifier = pricingStyleObj.modifier;
+
+        const limits = getInventoryLimits(customSettlementSize);
+        const selectedCommonItems = generateCommonItems(
+          fallbackShopType,
+          priceModifier, // Use new price modifier
+          limits
+        );
+        const selectedRareItems = generateRareItems(
+          fallbackShopType,
+          priceModifier, // Use new price modifier
+          limits
+        );
+
+        const newMotto = generateMotto(fallbackShopType, priceModifier);
+        
+        // Generate new shop description
+        const shopDescriptionData = generateShopDescription(
+          fallbackShopType, 
+          customSettlementSize, 
+          priceModifier, // Use new price modifier
+          {
+            location: shopkeeper.shopDescriptionParts?.location,
+            interior: shopkeeper.shopDescriptionParts?.interior,
+            texture: shopkeeper.shopDescriptionParts?.texture
+          }
+        );
+
+        // Generate new description template for the new shop type, but use locked name/race
+        const descriptionData = generateShopkeeperDescriptionWithTemplate({
+          name: shopkeeper.name, // Use locked name
+          race: shopkeeper.race, // Use locked race
+          shopType: fallbackShopType // Use new shop type
+        }, priceModifier);
+
+        // Generate new shop name with locked identity
+        const shopName = generateShopName(fallbackShopType, shopkeeper.name, shopkeeper.race, customSettlementSize, priceModifier);
+
+        const updatedShopkeeper = {
+          ...shopkeeper,
+          shopType: fallbackShopType,
+          shopName: shopName, // Use new shop name
+          pricingStyle: pricingStyleObj.style, // Update pricing style
+          priceModifier: priceModifier, // Update price modifier
+          commonItems: selectedCommonItems,
+          rareItems: selectedRareItems,
+          motto: newMotto,
+          shopDescription: shopDescriptionData.fullDescription,
+          shopDescriptionParts: {
+            location: shopDescriptionData.location,
+            interior: shopDescriptionData.interior,
+            texture: shopDescriptionData.texture
+          },
+          availableMoney: generateShopkeeperMoney(customSettlementSize), // Regenerate money
+          description: descriptionData.finalDescription,
+          descriptionTemplate: descriptionData.template
+        };
+
+        setShopkeeper(updatedShopkeeper);
+        setShopType(fallbackShopType);
+        setSelectedPricingStyle(actualStyleIndex.toString()); // Update pricing style state
+        return;
     }
-
-    const limits = getInventoryLimits(customSettlementSize);
-    const selectedCommonItems = generateCommonItems(
-      fallbackShopType,
-      shopkeeper.priceModifier,
-      limits
-    );
-    const selectedRareItems = generateRareItems(
-      fallbackShopType,
-      shopkeeper.priceModifier,
-      limits
-    );
-
-    const newMotto = generateMotto(fallbackShopType, shopkeeper.priceModifier);
-    
-    // Generate new shop description
-    const shopDescriptionData = generateShopDescription(
-      fallbackShopType, 
-      customSettlementSize, 
-      shopkeeper.priceModifier,
-      {
-        location: shopkeeper.shopDescriptionParts?.location,
-        interior: shopkeeper.shopDescriptionParts?.interior,
-        texture: shopkeeper.shopDescriptionParts?.texture
-      }
-    );
-
-    // FIX: Generate new description template for the new shop type, but use locked name/race
-    const descriptionData = generateShopkeeperDescriptionWithTemplate({
-      name: shopkeeper.name, // Use locked name
-      race: shopkeeper.race, // Use locked race
-      shopType: fallbackShopType // Use new shop type
-    }, shopkeeper.priceModifier);
-
-    const updatedShopkeeper = {
-      ...shopkeeper,
-      shopType: fallbackShopType,
-      commonItems: selectedCommonItems,
-      rareItems: selectedRareItems,
-      motto: newMotto,
-      shopDescription: shopDescriptionData.fullDescription,
-      shopDescriptionParts: {
-        location: shopDescriptionData.location,
-        interior: shopDescriptionData.interior,
-        texture: shopDescriptionData.texture
-      },
-      // FIX: Use the new description and template for the new shop type
-      description: descriptionData.finalDescription,
-      descriptionTemplate: descriptionData.template
-    };
-
-    setShopkeeper(updatedShopkeeper);
-    setShopType(fallbackShopType);
-    return;
-}
 
 
 let name, race;
@@ -2727,7 +2779,25 @@ useEffect(() => {
   setSettlementSize(randomSize);
   setSelectedPricingStyle('random')
   generateShopkeeper('random', randomSize, 'random');
-}, []); // Empty dependency array means this runs once on mount
+}, []);
+
+// Add this useEffect to handle the dark class on the document
+useEffect(() => {
+  if (isDarkMode) {
+    document.documentElement.classList.add('dark');
+    document.body.classList.add('dark');
+    // Force a repaint
+    document.documentElement.style.colorScheme = 'dark';
+  } else {
+    document.documentElement.classList.remove('dark');
+    document.body.classList.remove('dark');
+    document.documentElement.style.colorScheme = 'light';
+  }
+  
+  // Debug logging
+  console.log('Dark mode applied:', isDarkMode);
+  console.log('HTML classes:', document.documentElement.className);
+}, [isDarkMode]);
 
 // Effect to generate new inventory on settlement selection
 useEffect(() => {
@@ -2837,7 +2907,7 @@ const getSettlementData = (size: string) => {
 };
   
   return (
-    <div className="min-h-screen pt-12 max-w-4xl mx-auto bg-stone-200 p-4 font-sans">
+    <div className="min-h-screen pt-12 max-w-4xl mx-auto p-4 font-sans transition-colors bg-stone-200 dark:bg-gray-900">
       <style>
         {`
           @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap');
@@ -2928,6 +2998,99 @@ const getSettlementData = (size: string) => {
 
 .dropdown-wrapper:hover::after {
   color: #57534e;
+}
+
+/* Dark mode overrides */
+
+.dark button:focus {
+  outline: none;
+  border-color: #9ca3af !important;
+  box-shadow: 0 0 0 2px rgba(156, 163, 175, 0.1) !important;
+}
+
+.dark .shopkeeper-card {
+  background-color: #1f2937;
+  border-color: #404040;
+  color: #e5e5e5;
+}
+
+.dark .uniform-dropdown {
+  background-color: #44403c !important; 
+  border-color: #78716c !important; 
+  color: #e7e5e4 !important; 
+}
+
+.dark .uniform-dropdown:hover {
+  background-color: #57534e !important; 
+  border-color: #a8a29e !important; 
+}
+
+.dark .uniform-dropdown:focus {
+  border-color: #6b7280 !important;
+  box-shadow: 0 0 0 2px rgba(168, 162, 158, 0.1) !important;
+}
+
+.dark .dropdown-wrapper::after {
+  color: #e7e5e4 !important; 
+}
+
+.dark .dropdown-wrapper:hover::after {
+  color: #f5f5f4 !important; 
+}
+
+.dark .dropdown-menu {
+  background-color: #374151 !important; 
+  border-color: #6b7280 !important; 
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
+.dark .dropdown-menu button:hover {
+  background-color: #374151 !important; 
+}
+
+.dark .common-items-block {
+  background-color: #374151;
+  border-color: #6b7280;
+}
+
+.dark .rare-items-block {
+  background-color: #312e81;
+  border-color: #6366f1;
+}
+
+/* Update the dropdown buttons to have consistent dark styling */
+.dark .uniform-dropdown {
+  background-color: #374151 !important;
+  border-color: #6b7280 !important;
+  color: #d1d5db !important;
+}
+
+.dark .uniform-dropdown:hover {
+  background-color: #4b5563 !important;
+  border-color: #9ca3af !important;
+}
+
+.dark .uniform-dropdown:focus {
+  border-color: #9ca3af !important;
+  box-shadow: 0 0 0 2px rgba(156, 163, 175, 0.1) !important;
+}
+
+/* Ensure dropdown arrow icons are properly colored in dark mode */
+.dark .dropdown-wrapper::after {
+  color: #d1d5db !important;
+}
+
+.dark .dropdown-wrapper:hover::after {
+  color: #f3f4f6 !important;
+}
+
+.dark button {
+  border-color: #6b7280;
+}
+
+.dark button:hover {
+  background-color: #4b5563;
+  border-color: #9ca3af;
 }
 
 /* Variant for rare items (purple theme) */
@@ -3085,48 +3248,84 @@ const getSettlementData = (size: string) => {
             min-width: 100px;
             justify-content: flex-end;
           }
-          .rarity-badge {
-            font-size: 0.65rem;
-            padding: 0.15rem 0.4rem;
-            border-radius: 3px;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.025em;
-            border: 1px solid;
-            white-space: nowrap;
-          }
 
-          .rarity-common {
-            background-color: #F4F4F5;
-            color: #78716C;
-            border-color: #78716C;
-          }
+/* Rarity Badges */
+.rarity-badge {
+  font-size: 0.65rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  border: 1px solid;
+  white-space: nowrap;
+  display: inline-block; /* Ensure proper display */
+}
 
-          .rarity-uncommon {
-            background-color: #CCFBF1;
-            color: #0E7490;
-            border-color: #0E7490;
-          }
+.rarity-common {
+  background-color: #F4F4F5;
+  color: #78716C;
+  border-color: #78716C;
+}
 
-          .rarity-rare {
-            background-color: #E0E7FF;
-            color: #4F46E5;
-            border-color: #4F46E5;
-          }
+.rarity-uncommon {
+  background-color: #CCFBF1;
+  color: #0E7490;
+  border-color: #0E7490;
+}
 
-          .rarity-very-rare {
-            background-color: #FCE7F3;
-            color: #F43F5E;
-            border-color: #F43F5E;
-          }
+.rarity-rare {
+  background-color: #E0E7FF;
+  color: #4F46E5;
+  border-color: #4F46E5;
+}
 
-          .rarity-legendary {
-            background-color: #FEF3C7;
-            color: #D08700;
-            border-color: #D08700;
-          }
-          
-          .currency-icon {
+.rarity-very-rare {
+  background-color: #FCE7F3;
+  color: #F43F5E;
+  border-color: #F43F5E;
+}
+
+.rarity-legendary {
+  background-color: #FEF3C7;
+  color: #D08700;
+  border-color: #D08700;
+}
+
+/* Dark mode variants */
+.dark .rarity-common {
+  background-color: #374151;
+  color: #d1d5db;
+  border-color: #6b7280;
+}
+
+.dark .rarity-uncommon {
+  background-color: #134e4a;
+  color: #5eead4;
+  border-color: #14b8a6;
+}
+
+.dark .rarity-rare {
+  background-color: #312e81;
+  color: #c7d2fe;
+  border-color: #6366f1;
+}
+
+.dark .rarity-very-rare {
+  background-color: #881337;
+  color: #fca5a5;
+  border-color: #ef4444;
+}
+
+.dark .rarity-legendary {
+  background-color: #78350f;
+  color: #fbbf24;
+  border-color: #f59e0b;
+}
+
+        // Currency
+
+        .currency-icon {
           font-size: 16px !important;
           margin-right: 4px;
           vertical-align: middle;
@@ -3167,7 +3366,7 @@ const getSettlementData = (size: string) => {
         }
 
         .copper-icon {
-          color: #92400e !important;
+          color: #a16207 !important;
         }
                     
           .base-price {
@@ -3222,6 +3421,22 @@ const getSettlementData = (size: string) => {
 
 .dropdown-menu li button {
   white-space: nowrap !important;
+}
+
+.dark .dropdown-menu {
+  background-color: #374151;
+  border-color: #6b7280;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
+.dark .dropdown-menu button:hover {
+  background-color: #4b5563 !important;
+}
+
+.dark .till-card {
+  background-color: #44403c !important; /* gray-700 */
+  border-color: #6b7280 !important; /* stone-500 */
+  color: #e7e5e4 !important; /* stone-200 */
 }
 
           .settlement-selector {
@@ -3318,32 +3533,47 @@ const getSettlementData = (size: string) => {
 
           
 {/*Title Card */}
-<div className="shopkeeper-card rounded-md shadow-sm p-6 mb-6">
+<div className="shopkeeper-card rounded-md shadow-sm p-6 mb-6 bg-stone-100 dark:bg-gray-700">
   {/* Header with title and randomize button */}
 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4">
-  <h1 className="text-4xl font-bold text-stone-600 cinzel shopkeeper-name m-0 leading-none">
+  <h1 className="text-4xl font-bold text-stone-600 dark:text-gray-300 cinzel shopkeeper-name m-0 leading-none">
     Fantasy Shop Builder
   </h1>
   
-  {/* Randomize Button */}
-  <button
-    onClick={() => {
-      const sizes = ['village', 'town', 'city'];
-      const randomSize = sizes[Math.floor(Math.random() * sizes.length)];
-      setShopType('');
-      setSettlementSize(randomSize);
-      generateShopkeeper('random', randomSize, 'random'); // Pass 'random' directly
-    }}
-    className="flex items-center justify-center sm:justify-start gap-2 text-xs font-medium inter uppercase tracking-wider rounded-md border px-2 py-1 bg-stone-100 text-stone-500 border-stone-400 hover:bg-stone-200 transition self-start sm:self-auto"
-  >
-    <span className="material-symbols-outlined" style={{fontSize: '18px'}}>casino</span>
-    Randomize
-  </button>
+{/* Controls container */}
+  <div className="flex items-center gap-2">
+    {/* Dark Mode Toggle */}
+    <button
+      onClick={() => setIsDarkMode(!isDarkMode)}
+      className="flex items-center justify-center gap-2 text-xs font-medium inter uppercase tracking-wider rounded-md border px-2 py-1 bg-stone-100 dark:bg-gray-700 text-stone-500 dark:text-gray-300 border-stone-400 dark:border-gray-600 hover:bg-stone-200 dark:hover:bg-gray-600 transition"
+      title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+    >
+      <span className="material-symbols-outlined" style={{fontSize: '18px'}}>
+        {isDarkMode ? 'light_mode' : 'dark_mode'}
+      </span>
+      {isDarkMode ? 'Light' : 'Dark'}
+    </button>
+    
+    {/* Randomize Button */}
+    <button
+      onClick={() => {
+        const sizes = ['village', 'town', 'city'];
+        const randomSize = sizes[Math.floor(Math.random() * sizes.length)];
+        setShopType('');
+        setSettlementSize(randomSize);
+        generateShopkeeper('random', randomSize, 'random');
+      }}
+      className="flex items-center justify-center sm:justify-start gap-2 text-xs font-medium inter uppercase tracking-wider rounded-md border px-2 py-1 bg-stone-100 dark:bg-gray-700 text-stone-500 dark:text-gray-300 border-stone-400 dark:border-gray-600 hover:bg-stone-200 dark:hover:bg-gray-600 transition"
+    >
+      <span className="material-symbols-outlined" style={{fontSize: '18px'}}>casino</span>
+      Randomize
+    </button>
+  </div>
 </div>
   
   {/* Descriptive text in separate container */}
  <div>
-  <p className="text-stone-500 inter text-sm">
+  <p className="text-stone-500 dark:text-gray-300 inter text-sm">
     Drop a ready-to-go shop into your game in seconds. Use the dropdowns to change the shop type or location. The inventory updates to match.
     <br />
     <br />
@@ -3354,87 +3584,88 @@ const getSettlementData = (size: string) => {
    
 {shopkeeper && (
         <>
-          {/* Shopkeeper Information Card */}
-          <div className="shopkeeper-card rounded-md shadow-sm p-6 mb-6">
-            <div className="header-content mb-3">
+{/* Shopkeeper Information Card */}
+<div className="shopkeeper-card rounded-md shadow-sm p-6 mb-6 bg-stone-100 dark:bg-gray-700">
+  <div className="header-content mb-3">
               
-{/* Shop Name */}
-<div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-1">
-  {/* Shop Name */}
-  <h2 className="text-2xl font-bold text-stone-600 cinzel shopkeeper-name m-0 leading-none">
-    {shopkeeper.shopName}
-  </h2>
+    {/* Shop Name */}
+    <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-1">
+      {/* Shop Name */}
+      <h2 className="text-2xl font-bold text-stone-600 dark:text-gray-300 cinzel shopkeeper-name m-0 leading-none">
+        {shopkeeper.shopName}
+      </h2>
       
       
-{/* Dropdowns - wrap on mobile */}
-<div className="flex flex-wrap items-center gap-2">
+    {/* Dropdowns - wrap on mobile */}
+    <div className="flex flex-wrap items-center gap-2">
 
-  {/* Shop Type Dropdown */}
-  <div className="relative inline-block">
-    <button
-      onClick={() => {
-        closeAllDropdowns();
-        setIsShopTypeDropdownOpen(!isShopTypeDropdownOpen);
-      }}
-      className="bg-stone-100 border border-stone-400 text-stone-600 text-xs 
-      font-medium inter uppercase tracking-wider rounded-md px-2 py-1 cursor-pointer 
-      hover:bg-stone-200 focus:outline-none focus:border-stone-600 focus:ring-2 focus:ring-stone-600/10 
-      flex items-center justify-between min-w-fit"
-    >
-      <span className="flex items-center">
-        {(() => {
-          const icon = shopIcons[shopkeeper.shopType] || "storefront";
-          
-          if (typeof icon === 'string') {
-            return <span className="material-symbols-outlined shop-icon mr-1">{icon}</span>;
-          } else {
-            return <PhosphorIcon icon={icon} size={20} className="shop-icon mr-1" />;
-          }
-        })()}
-        {shopkeeper.shopType}
-      </span>
-      <span className="material-symbols-outlined ml-1 leading-none" style={{fontSize: '14px'}}>
-        {isShopTypeDropdownOpen ? 'expand_less' : 'expand_more'}
-      </span>
-    </button>
-   
-    {isShopTypeDropdownOpen && (
-      <div className="dropdown-menu absolute z-10 mt-1 bg-stone-50 border border-stone-300 rounded-lg shadow-lg">
-        <ul className="py-0.5 text-xs text-stone-700">
-          {shopTypes.map((type) => (
-            <li key={type}>
-              <button
-                onClick={() => {
-                  closeAllDropdowns();
-                  setShopType(type);
-                  generateShopkeeper(type, settlementSize, selectedPricingStyle);
-                  setIsShopTypeDropdownOpen(false);
-                }}
-                className={`block w-full text-left px-3 py-1.5 hover:bg-stone-100 text-stone-600 font-medium inter uppercase tracking-wider ${
-                  shopkeeper.shopType === type ? 'bg-stone-100' : ''
-                }`}
-              >
-                <span className="flex items-center">
-                  {(() => {
-                    const icon = shopIcons[type] || "storefront";
-                    
-                    if (typeof icon === 'string') {
-                      return <span className="material-symbols-outlined shop-icon text-stone-400 mr-1">{icon}</span>;
-                    } else {
-                      return <PhosphorIcon icon={icon} weight="regular" className="shop-icon text-stone-400 mr-1" />;
-                    }
-                  })()}
-                  {type}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
-    )}
+      {/* Shop Type Dropdown */}
+      <div className="relative inline-block">
+        <button
+          onClick={() => {
+            closeAllDropdowns();
+            setIsShopTypeDropdownOpen(!isShopTypeDropdownOpen);
+          }}
+            className="bg-stone-100 dark:bg-gray-700 border border-stone-400 dark:border-gray-600 text-stone-600 dark:text-gray-300 text-xs 
+            font-medium inter uppercase tracking-wider rounded-md px-3 py-1 cursor-pointer 
+            hover:bg-stone-200 dark:hover:bg-gray-600 focus:outline-none focus:border-stone-600 dark:focus:border-gray-600 focus:ring-2 focus:ring-stone-600/10 dark:focus:ring-stone-400/10 
+            inline-flex items-center justify-between min-w-fit align-middle"
+
+        >
+          <span className="flex items-center">
+            {(() => {
+              const icon = shopIcons[shopkeeper.shopType] || "storefront";
+              
+              if (typeof icon === 'string') {
+                return <span className="material-symbols-outlined shop-icon mr-1">{icon}</span>;
+              } else {
+                return <PhosphorIcon icon={icon} size={20} className="shop-icon mr-1" />;
+              }
+            })()}
+            {shopkeeper.shopType}
+          </span>
+          <span className="material-symbols-outlined ml-1 leading-none" style={{fontSize: '14px'}}>
+            {isShopTypeDropdownOpen ? 'expand_less' : 'expand_more'}
+          </span>
+        </button>
+      
+        {isShopTypeDropdownOpen && (
+          <div className="dropdown-menu absolute z-10 mt-1 bg-stone-50 dark:bg-gray-700 border border-stone-300 dark:border-gray-600 rounded-lg shadow-lg">
+            <ul className="py-0.5 text-xs text-stone-700 dark:text-gray-300">
+              {shopTypes.map((type) => (
+                <li key={type}>
+                  <button
+                    onClick={() => {
+                      closeAllDropdowns();
+                      setShopType(type);
+                      generateShopkeeper(type, settlementSize, selectedPricingStyle);
+                      setIsShopTypeDropdownOpen(false);
+                    }}
+                    className={`block w-full text-left px-3 py-1.5 hover:bg-stone-100 text-stone-600 dark:text-gray-300 font-medium inter uppercase tracking-wider ${
+                      shopkeeper.shopType === type ? 'bg-stone-100' : ''
+                    }`}
+                  >
+                    <span className="flex items-center">
+                      {(() => {
+                        const icon = shopIcons[type] || "storefront";
+                        
+                        if (typeof icon === 'string') {
+                          return <span className="material-symbols-outlined shop-icon text-stone-400 mr-1">{icon}</span>;
+                        } else {
+                          return <PhosphorIcon icon={icon} weight="regular" className="shop-icon text-stone-400 mr-1" />;
+                        }
+                      })()}
+                      {type}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
   </div>
 
-    <span className="text-stone-600 text-sm inter">
+    <span className="text-stone-600 dark:text-gray-300 text-sm inter">
     in a
   </span>
 
@@ -3445,10 +3676,10 @@ const getSettlementData = (size: string) => {
         closeAllDropdowns();
         setIsSettlementDropdownOpen(!isSettlementDropdownOpen)}
       }
-      className="bg-stone-100 border border-stone-400 text-stone-600 text-xs 
-      font-medium inter uppercase tracking-wider rounded-md px-2 py-1 cursor-pointer 
-      hover:bg-stone-200 focus:outline-none focus:border-stone-600 focus:ring-2 focus:ring-stone-600/10 
-      flex items-center justify-between min-w-fit"
+        className="bg-stone-100 dark:bg-gray-700 border border-stone-400 dark:border-gray-600 text-stone-600 dark:text-gray-300 text-xs 
+        font-medium inter uppercase tracking-wider rounded-md px-3 py-1 cursor-pointer 
+        hover:bg-stone-200 dark:hover:bg-gray-600 focus:outline-none focus:border-stone-600 dark:focus:border-stone-400 focus:ring-2 focus:ring-stone-600/10 dark:focus:ring-stone-400/10 
+        inline-flex items-center justify-between min-w-fit align-middle"
     >
       <span className="flex items-center">
         {(() => { 
@@ -3467,8 +3698,8 @@ const getSettlementData = (size: string) => {
     </button>
    
     {isSettlementDropdownOpen && (
-      <div className="dropdown-menu absolute z-10 mt-1 bg-stone-50 border border-stone-300 rounded-lg shadow-lg">
-        <ul className="py-0.5 text-xs text-stone-700">
+      <div className="dropdown-menu absolute z-10 mt-1 bg-stone-50 dark:bg-gray-700 border border-stone-300 dark:border-gray-600 rounded-lg shadow-lg">
+        <ul className="py-0.5 text-xs text-stone-700 dark:text-gray-300">
           {["village", "town", "city"].map((size) => (
             <li key={size}>
               <button
@@ -3477,7 +3708,7 @@ const getSettlementData = (size: string) => {
                   setSettlementSize(size);
                   setIsSettlementDropdownOpen(false);
                 }}
-                className={`block w-full text-left px-3 py-1.5 hover:bg-stone-100 text-stone-600 font-medium inter uppercase tracking-wider ${
+                className={`block w-full text-left px-3 py-1.5 hover:bg-stone-100 text-stone-600 dark:text-gray-300 font-medium inter uppercase tracking-wider ${
                   settlementSize === size ? 'bg-stone-100' : ''
                 }`}
               >
@@ -3503,14 +3734,14 @@ const getSettlementData = (size: string) => {
     </div>
 
     {shopkeeper?.shopDescription && (
-  <p className="text-stone-600 inter text-sm mt-1 mb-6">{shopkeeper.shopDescription}</p>
+  <p className="text-stone-600 dark:text-gray-300 inter text-sm mt-1 mb-6">{shopkeeper.shopDescription}</p>
 )}
 
 
 {/* Shopkeeper Name & Race */}
 <div className="flex items-start justify-between mb-1 gap-2">
   <div className="flex items-center gap-2 flex-wrap min-w-0">
-    <h3 className="shopkeeper-name text-lg text-stone-600 font-semibold cinzel m-0 flex-shrink-0">
+    <h3 className="shopkeeper-name text-lg text-stone-600 dark:text-gray-300 font-semibold cinzel m-0 flex-shrink-0">
       {shopkeeper.name}
     </h3>
     <span className="text-stone-400 font-normal flex-shrink-0">•</span>
@@ -3521,9 +3752,9 @@ const getSettlementData = (size: string) => {
     setIsRaceDropdownOpen(!isRaceDropdownOpen)
   }}
   disabled={isLocked}
-  className={`bg-stone-100 border border-stone-400 text-stone-600 text-xs 
-  font-medium inter uppercase tracking-wider rounded-md px-3 py-1 cursor-pointer 
-  hover:bg-stone-200 focus:outline-none focus:border-stone-600 focus:ring-2 focus:ring-stone-600/10 
+  className={`bg-stone-100 dark:bg-gray-700 border border-stone-400 dark:border-gray-600 text-stone-600 dark:text-gray-300 text-xs
+  font-medium inter uppercase tracking-wider rounded-md px-3 py-1 cursor-pointer
+  hover:bg-stone-200 dark:hover:bg-gray-600 focus:outline-none focus:border-stone-600 dark:focus:border-stone-400 focus:ring-2 focus:ring-stone-600/10 dark:focus:ring-stone-400/10
   flex items-center justify-between min-w-fit ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
 >
       <span className="flex items-center">
@@ -3536,8 +3767,8 @@ const getSettlementData = (size: string) => {
     </button>
     
       {isRaceDropdownOpen && (
-        <div className="dropdown-menu absolute z-10 mt-1 bg-stone-50 border border-stone-300 rounded-lg shadow-lg">
-          <ul className="py-0.5 text-xs text-stone-700">
+        <div className="dropdown-menu absolute z-10 mt-1 bg-stone-50 dark:bg-gray-700 border border-stone-300 dark:border-gray-600 rounded-lg shadow-lg">
+          <ul className="py-0.5 text-xs text-stone-700 dark:text-gray-300">
             {races.map((race) => (
               <li key={race}>
                 <button
@@ -3546,8 +3777,8 @@ const getSettlementData = (size: string) => {
                     regenerateNameForRace(race);
                     setIsRaceDropdownOpen(false);
                   }}
-                  className={`block w-full text-left px-3 py-1 hover:bg-stone-100 text-stone-600 font-medium inter uppercase tracking-wider ${
-                    shopkeeper.race === race ? 'bg-stone-100' : ''
+                  className={`block w-full text-left px-3 py-1 hover:bg-stone-100 dark:hover:bg-gray-600 text-stone-600 dark:text-gray-300 font-medium inter uppercase tracking-wider ${
+                    shopkeeper.race === race ? 'bg-stone-100 dark:bg-stone-600' : ''
                   }`}
                 >
                   <span className="flex items-center"><span className="material-symbols-outlined shop-icon text-stone-400 mr-1">person_raised_hand</span>{race}
@@ -3564,7 +3795,7 @@ const getSettlementData = (size: string) => {
 <button
   onClick={toggleLock}
   aria-label="Toggle shopkeeper lock"
-  className="text-stone-500 hover:text-stone-700 transition-colors text-xs flex-shrink-0 self-center"
+  className="text-stone-500 dark:text-gray-300 hover:text-stone-700 dark:hover:text-stone-200 transition-colors text-xs flex-shrink-0 self-center"
 >
       {isLocked ? (
   <PhosphorIcon icon={LockKeyIcon} size={20} weight="thin" title="Locked" />
@@ -3577,7 +3808,7 @@ const getSettlementData = (size: string) => {
 <div className="space-y-2">
 
  {/* Shop Motto */}
-  <p className="text-sm inter italic text-stone-400">
+  <p className="text-sm inter italic text-stone-400 dark:text-gray-400">
    — "{shopkeeper.motto}"
   </p>
  </div>
@@ -3585,14 +3816,14 @@ const getSettlementData = (size: string) => {
 
 
 {/* Shopkeeper Description */}
- <div className="text-stone-600 inter text-sm mt-1">
+ <div className="text-stone-600 dark:text-gray-300 inter text-sm mt-1">
   <div className="mb-6">
   {shopkeeper.description}
 </div>
                   
 {/* Interactive pricing line */}
 
-  <div className="text-stone-600 inter text-sm leading-relaxed">
+  <div className="text-stone-600 dark:text-gray-300 inter text-sm leading-relaxed">
   <span>{shopkeeper.name.split(' ')[0]} maintains </span>
   <span className="relative inline-block">
     <button
@@ -3600,9 +3831,9 @@ const getSettlementData = (size: string) => {
     closeAllDropdowns();
     setIsDropdownOpen(!isDropdownOpen)
   }}
-  className="bg-stone-100 border border-stone-400 text-stone-600 text-xs 
+  className="bg-stone-100 dark:bg-gray-700 border border-stone-400 dark:border-gray-600 text-stone-600 dark:text-gray-300 text-xs 
   font-medium inter uppercase tracking-wider rounded-md px-3 py-1 cursor-pointer 
-  hover:bg-stone-200 focus:outline-none focus:border-stone-600 focus:ring-2 focus:ring-stone-600/10 
+  hover:bg-stone-200 dark:hover:bg-gray-600 focus:outline-none focus:border-stone-600 dark:focus:border-stone-400 focus:ring-2 focus:ring-stone-600/10 dark:focus:ring-stone-400/10 
   inline-flex items-center justify-between min-w-fit align-middle"
 >
       <span className="flex items-center">
@@ -3615,8 +3846,8 @@ const getSettlementData = (size: string) => {
     </button>
    
     {isDropdownOpen && (
-  <div className="dropdown-menu absolute z-10 mt-1 bg-stone-50 border border-stone-300 rounded-lg shadow-lg">
-    <ul className="py-0.5 text-xs text-stone-700">
+  <div className="dropdown-menu absolute z-10 mt-1 bg-stone-50 dark:bg-gray-700 border border-stone-300 dark:border-gray-600 rounded-lg shadow-lg">
+    <ul className="py-0.5 text-xs text-stone-700 dark:text-gray-300">
       {/* Market Rate button */}
       <li>
         <button
@@ -3666,7 +3897,7 @@ if (hasRefinementElements(shopkeeper.shopName, shopkeeper.shopType)) {
     descriptionTemplate: descriptionData.descriptionTemplate
   });
 }}
-          className="block w-full text-left px-3 py-1 hover:bg-stone-100 text-stone-600 font-medium inter uppercase tracking-wider"
+          className="block w-full text-left px-3 py-1 hover:bg-stone-100 text-stone-600 dark:text-gray-300 font-medium inter uppercase tracking-wider"
         >
        <span className="flex items-center">
   <span className="material-symbols-outlined shop-icon text-stone-400 mr-1">money_bag</span>
@@ -3735,7 +3966,7 @@ if (hasRefinementElements(shopkeeper.shopName, shopkeeper.shopType)) {
     descriptionTemplate: descriptionData.descriptionTemplate
   });
 }}
-                className="block w-full text-left px-3 py-1.5 hover:bg-stone-100 text-stone-600 font-medium inter uppercase tracking-wider"
+                className="block w-full text-left px-3 py-1.5 hover:bg-stone-100 dark:hover:bg-gray-600 text-stone-600 dark:text-gray-300 font-medium inter uppercase tracking-wider"
               >
                 <span className="flex items-center">
   <span className="material-symbols-outlined shop-icon text-stone-400 mr-1">money_bag</span>
@@ -3754,29 +3985,28 @@ if (hasRefinementElements(shopkeeper.shopName, shopkeeper.shopType)) {
 </div>
           </div>
 
-          {/* New Combined Inventory Section */}
-<div className="shopkeeper-card rounded-md shadow-sm p-6 mb-6">
-  <div className="flex items-center justify-between mb-4">
-    <div className="flex items-center gap-3">
-      <h3 className="text-lg font-semibold text-stone-600 cinzel shopkeeper-name m-0">
-        Shop Inventory
-      </h3>
-      <button
-        onClick={() => {
-          closeAllDropdowns();
-          regenerateCommonItems();
-          regenerateRareItems();
-        }}
-        className="text-stone-500 hover:text-stone-700 transition-colors"
-        title="Regenerate all inventory"
-      >
-        <span className="material-symbols-outlined" style={{fontSize: '20px'}}>refresh</span>
-      </button>
-    </div>
+{/* New Combined Inventory Section */}
+<div className="shopkeeper-card rounded-md shadow-sm p-6 mb-6 bg-stone-100 dark:bg-gray-700">
+<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+<div className="flex items-center gap-2">
+  <h3 className="text-lg font-semibold text-stone-600 dark:text-gray-300 cinzel shopkeeper-name m-0 leading-none">
+    Shop Inventory
+  </h3>
+  <button
+    onClick={() => {
+      closeAllDropdowns();
+      regenerateCommonItems();
+      regenerateRareItems();
+    }}
+    className="text-stone-500 dark:text-gray-300 hover:text-stone-700 transition-colors flex items-center"
+    title="Regenerate all inventory"
+  >
+    <span className="material-symbols-outlined" style={{fontSize: '20px'}}>refresh</span>
+  </button>
+</div>
     
-<div className="flex items-center gap-3">
-  <div className="flex items-center gap-2 text-sm text-stone-600">
-    <span>Show</span>
+  <div className="flex flex-wrap items-center gap-2 text-sm text-stone-600 dark:text-gray-300">
+    <span className="whitespace-nowrap">Show</span>
     
     {/* Category Dropdown */}
     <div className="relative inline-block">
@@ -3785,10 +4015,10 @@ if (hasRefinementElements(shopkeeper.shopName, shopkeeper.shopType)) {
           closeAllDropdowns();
           setIsCategoryDropdownOpen(!isCategoryDropdownOpen);
         }}
-        className="bg-stone-100 border border-stone-400 text-stone-600 text-xs 
+        className="bg-stone-100 dark:bg-gray-700 border border-stone-400 dark:border-gray-600 text-stone-600 dark:text-gray-300 text-xs 
         font-medium inter uppercase tracking-wider rounded-md px-3 py-1 cursor-pointer 
-        hover:bg-stone-200 focus:outline-none focus:border-stone-600 focus:ring-2 focus:ring-stone-600/10 
-        flex items-center justify-between min-w-fit"
+        hover:bg-stone-200 dark:hover:bg-gray-600 focus:outline-none focus:border-stone-600 dark:focus:border-stone-400 focus:ring-2 focus:ring-stone-600/10 dark:focus:ring-stone-400/10 
+        inline-flex items-center justify-between min-w-fit align-middle"
       >
         <span className="flex items-center">
           <span className="material-symbols-outlined mr-1 leading-none">all_inclusive</span>
@@ -3800,8 +4030,8 @@ if (hasRefinementElements(shopkeeper.shopName, shopkeeper.shopType)) {
       </button>
      
       {isCategoryDropdownOpen && (
-        <div className="dropdown-menu absolute z-10 mt-1 bg-stone-50 border border-stone-300 rounded-lg shadow-lg">
-          <ul className="py-0.5 text-xs text-stone-700">
+        <div className="dropdown-menu absolute z-10 mt-1 bg-stone-50 dark:bg-gray-700 border border-stone-300 dark:border-gray-600 rounded-lg shadow-lg">
+          <ul className="py-0.5 text-xs text-stone-700 dark:text-gray-300">
             <li>
               <button
                 onClick={() => {
@@ -3809,7 +4039,7 @@ if (hasRefinementElements(shopkeeper.shopName, shopkeeper.shopType)) {
                   setSelectedCategory('any');
                   setIsCategoryDropdownOpen(false);
                 }}
-                className={`block w-full text-left px-3 py-1.5 hover:bg-stone-100 text-stone-600 font-medium inter uppercase tracking-wider ${
+                className={`block w-full text-left px-3 py-1.5 hover:bg-stone-100 text-stone-600 dark:text-gray-300 font-medium inter uppercase tracking-wider ${
                   selectedCategory === 'any' ? 'bg-stone-100' : ''
                 }`}
               >
@@ -3829,7 +4059,7 @@ if (hasRefinementElements(shopkeeper.shopName, shopkeeper.shopType)) {
                       setSelectedCategory(category);
                       setIsCategoryDropdownOpen(false);
                     }}
-                    className={`block w-full text-left px-3 py-1.5 hover:bg-stone-100 text-stone-600 font-medium inter uppercase tracking-wider ${
+                    className={`block w-full text-left px-3 py-1.5 hover:bg-stone-100 text-stone-600 dark:text-gray-300 font-medium inter uppercase tracking-wider ${
                       selectedCategory === category ? 'bg-stone-100' : ''
                     }`}
                   >
@@ -3855,7 +4085,7 @@ if (hasRefinementElements(shopkeeper.shopName, shopkeeper.shopType)) {
       )}
     </div>
     
-    <span>sorted by</span>
+    <span className="whitespace-nowrap">sorted by</span>
     
     {/* Sort Dropdown */}
     <div className="relative inline-block">
@@ -3864,10 +4094,10 @@ if (hasRefinementElements(shopkeeper.shopName, shopkeeper.shopType)) {
           closeAllDropdowns();
           setIsSortDropdownOpen(!isSortDropdownOpen)
         }}
-        className="bg-stone-100 border border-stone-400 text-stone-600 text-xs 
+        className="bg-stone-100 dark:bg-gray-700 border border-stone-400 dark:border-gray-600 text-stone-600 dark:text-gray-300 text-xs 
         font-medium inter uppercase tracking-wider rounded-md px-3 py-1 cursor-pointer 
-        hover:bg-stone-200 focus:outline-none focus:border-stone-600 focus:ring-2 focus:ring-stone-600/10 
-        flex items-center justify-between min-w-fit"
+        hover:bg-stone-200 dark:hover:bg-gray-600 focus:outline-none focus:border-stone-600 dark:focus:border-stone-400 focus:ring-2 focus:ring-stone-600/10 dark:focus:ring-stone-400/10 
+        inline-flex items-center justify-between min-w-fit align-middle"
       >
         <span className="flex items-center">
           <span className="material-symbols-outlined mr-1 leading-none">sort</span>
@@ -3881,8 +4111,8 @@ if (hasRefinementElements(shopkeeper.shopName, shopkeeper.shopType)) {
       </button>
      
       {isSortDropdownOpen && (
-        <div className="dropdown-menu absolute z-10 mt-1 bg-stone-50 border border-stone-300 rounded-lg shadow-lg">
-          <ul className="py-0.5 text-xs text-stone-700">
+        <div className="dropdown-menu absolute z-10 mt-1 bg-stone-50 dark:bg-gray-700 border border-stone-300 dark:border-gray-600 rounded-lg shadow-lg">
+          <ul className="py-0.5 text-xs text-stone-700 dark:text-gray-300">
             {[
               { value: 'alpha', label: 'Alphabetical', icon: 'sort_by_alpha' },
               { value: 'price-asc', label: 'Price: Low to High', icon: 'trending_up' },
@@ -3895,7 +4125,7 @@ if (hasRefinementElements(shopkeeper.shopName, shopkeeper.shopType)) {
                     setInventorySort(option.value);
                     setIsSortDropdownOpen(false);
                   }}
-                  className={`block w-full text-left px-3 py-1.5 hover:bg-stone-100 text-stone-600 font-medium inter uppercase tracking-wider ${
+                  className={`block w-full text-left px-3 py-1.5 hover:bg-stone-100 text-stone-600 dark:text-gray-300 font-medium inter uppercase tracking-wider ${
                     inventorySort === option.value ? 'bg-stone-100' : ''
                   }`}
                 >
@@ -3912,7 +4142,7 @@ if (hasRefinementElements(shopkeeper.shopName, shopkeeper.shopType)) {
     </div>
   </div>
 </div>
-  </div>
+
   
   <div className="space-y-3">
     {getCombinedInventory().map((item, index) => (
@@ -3976,7 +4206,7 @@ if (hasRefinementElements(shopkeeper.shopName, shopkeeper.shopType)) {
     ))}
     
     {getCombinedInventory().length === 0 && (
-      <div className="text-center py-8 text-stone-500">
+      <div className="text-center py-8 text-stone-500 dark:text-gray-300">
         <span className="material-symbols-outlined mb-2 block" style={{fontSize: '48px'}}>inventory_2</span>
         <p>No items match the selected category.</p>
       </div>
@@ -3985,29 +4215,29 @@ if (hasRefinementElements(shopkeeper.shopName, shopkeeper.shopType)) {
 </div>
 
           {/* Shop Till Card */}
-          <div className="shopkeeper-card rounded-md shadow-sm p-6 mb-6">
-            <div className="flex items-center justify-between">
-              <div className="till-display">
-                <div className="flex items-center gap-2 mb-1">
-                <span className="material-symbols-outlined text-stone-600">point_of_sale</span>
-                 <span className="text-xs uppercase font-medium inter tracking-wider text-stone-500">Shop Till</span>
-                </div>
+      <div className="shopkeeper-card rounded-md shadow-sm p-6 mb-6 bg-stone-100 dark:bg-gray-700">
+          <div className="flex items-center justify-between">
+            <div className="till-display">
+              <div className="flex items-center gap-2 mb-1">
+              <span className="material-symbols-outlined text-stone-600 dark:text-gray-300">point_of_sale</span>
+              <span className="text-xs uppercase font-medium inter tracking-wider text-stone-500 dark:text-gray-300">Shop Till</span>
+            </div>
                 <div>
-                  <div className="till-amount font-medium text-stone-600" dangerouslySetInnerHTML={{ __html: shopkeeper.availableMoney }}></div>
+                  <div className="till-amount font-medium text-stone-600 dark:text-gray-300" dangerouslySetInnerHTML={{ __html: shopkeeper.availableMoney }}></div>
+                  </div>
                 </div>
-              </div>
               
               {/* Placeholder for future buy/sell controls */}
               <div className="flex gap-2">
                 <div className="text-xs text-stone-400 italic">
                   Buy/Sell controls coming soon
                 </div>
-              </div>
-            </div>
           </div>
+            </div>
+      </div>
         </>
       )}
-                </div>
+      </div>
 
       )}
       

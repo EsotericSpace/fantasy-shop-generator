@@ -1,5 +1,411 @@
 import React, { useState, useEffect } from 'react';
+import { HorseIcon, CastleTurretIcon, FarmIcon, HouseLineIcon, FlaskIcon, BackpackIcon, LockKeyIcon, LockKeyOpenIcon } from "@phosphor-icons/react";
 
+const PhosphorIcon = ({ icon: Icon, weight = "thin", size = 20, ...props }) => (
+  <Icon weight={weight} size={size} {...props} />
+);
+
+const shopkeeperIntroductions = {
+  "alchemist": {
+    refined: [
+      "The laboratory-precise workshop falls silent as {name} looks up from a complex distillation, {possessive} movements carrying the practiced grace of a master who has transformed the chaotic art of alchemy into an exact science.",
+      "Amid gleaming brass instruments and methodically labeled reagents, {name} greets you with the measured courtesy of someone whose expertise has earned {object} a reputation that extends far beyond these pristine walls.",
+      "The air shimmers with controlled magical energies as {name} sets down a perfectly calibrated scale, {possessive} scholarly demeanor suggesting years of formal study have refined both {possessive} knowledge and {possessive} manner.",
+      "Behind a workspace that resembles a university laboratory more than a merchant's shop, {name} offers a professional smile that speaks to decades of turning theoretical knowledge into practical mastery.",
+      "The scent of rare herbs and precisely measured compounds fills the air as {name} turns from {possessive} meticulous work, every gesture reflecting the confidence of someone who has elevated alchemy from craft to science."
+    ],
+    humble: [
+      "The cramped workshop buzzes with chaotic energy as {name} hurriedly clears space on a table crowded with half-finished experiments, {possessive} enthusiasm evident despite the organized disorder surrounding {pronoun}.",
+      "Wiping stained hands on an equally marked apron, {name} grins sheepishly while a small explosion of harmless sparks erupts from an unmanned beaker, clearly more passionate about discovery than presentation.",
+      "The air carries the scent of sulfur and burnt herbs as {name} emerges from behind towering stacks of unmarked bottles, {possessive} eyes bright with the excitement of someone who treats every mistake as a learning opportunity.",
+      "Amid the cheerful chaos of improvised equipment and experimental mishaps, {name} welcomes you with infectious enthusiasm, clearly someone who compensates for limited resources with boundless curiosity.",
+      "The workshop echoes with the sounds of bubbling concoctions as {name} abandons a smoking experiment to greet you, {possessive} genuine excitement about {possessive} work evident despite the humble surroundings."
+    ],
+    standard: [
+      "The functional workshop hums with productive activity as {name} looks up from a steadily brewing potion, {possessive} workspace reflecting the organized efficiency of someone who has found their rhythm.",
+      "Surrounded by well-worn journals and reliable equipment, {name} greets you with the easy confidence of an alchemist who has built a solid reputation through consistent results rather than flashy displays.",
+      "The comfortable blend of herbs and chemical reactions fills the air as {name} sets aside {possessive} current project, {possessive} approachable manner suggesting someone who balances expertise with genuine customer care.",
+      "In a workshop where practical knowledge clearly trumps expensive equipment, {name} offers a welcoming smile that speaks to years of serving the community with dependable skill.",
+      "The steady rhythm of routine brewing continues in the background as {name} turns to address you, {possessive} confident but unpretentious demeanor reflecting a craftsperson who takes pride in honest work."
+    ]
+  },
+  "blacksmith": {
+    refined: [
+      "The rhythmic ring of hammer on anvil follows a measured cadence as {name} completes a perfect strike sequence, {possessive} movements carrying the precision of a master who has transformed physical craft into high art.",
+      "Heat radiates from a perfectly controlled forge as {name} sets down tools with ceremonial care, {possessive} spotless leather apron and organized workspace speaking to decades of disciplined excellence.",
+      "The workshop gleams with the efficiency of a military operation as {name} turns from the anvil, every tool in its designated place and every gesture reflecting the confidence of true mastery.",
+      "Behind {object}, red-hot metal cools into perfect form as {name} greets you with the quiet authority of someone whose reputation for quality has been forged through years of uncompromising standards.",
+      "The forge burns at precisely controlled temperatures as {name} pauses in {possessive} work, {possessive} scholarly understanding of metallurgy evident in the way {pronoun} discusses {possessive} craft with technical precision."
+    ],
+    humble: [
+      "Sweat glistens on {name}'s soot-marked face as {pronoun} looks up from the blazing forge, the intense heat and constant hammering creating an atmosphere of relentless, honest labor.",
+      "The workshop echoes with determined strikes as {name} briefly pauses {possessive} work, {possessive} rough hands and improvised tools telling the story of someone who makes up for limited resources with sheer determination.",
+      "Steam and sparks fill the air as {name} wipes {possessive} brow with a blackened sleeve, {possessive} apologetic smile acknowledging the noise and heat while {possessive} eyes shine with pride in honest work.",
+      "Amid the controlled chaos of salvaged materials and creative solutions, {name} greets you with the straightforward manner of someone who believes good work speaks louder than fine presentation.",
+      "The forge radiates almost overwhelming heat as {name} sets down a well-worn hammer, {possessive} genuine concern for your comfort evident even as {pronoun} continues the demanding rhythm of {possessive} trade."
+    ],
+    standard: [
+      "The steady percussion of skilled metalwork provides a dependable backdrop as {name} looks up from the anvil, {possessive} workspace reflecting the organized efficiency of a craftsperson in their element.",
+      "Heat and purpose fill the workshop as {name} pauses between hammer strikes, the comfortable chaos of active production surrounding someone who has mastered the balance between tradition and innovation.",
+      "The forge glows with working heat as {name} sets aside {possessive} current project, {possessive} confident movements and practical workspace speaking to years of reliable service to the community.",
+      "Sparks dance in the air as {name} turns from {possessive} work, the rhythmic sounds of the forge creating an atmosphere where skill and experience have found their natural partnership.",
+      "The workshop hums with productive energy as {name} greets you with the easy authority of someone who has built a solid reputation through consistent quality and honest craftsmanship."
+    ]
+  },
+  "general store": {
+    refined: [
+      "Every item sits in perfect alignment as {name} glides between displays with graceful efficiency, the immaculate organization and polished presentation reflecting years of cultivating an exceptional customer experience.",
+      "The pristine shop layout speaks to meticulous attention as {name} approaches with professional poise, {possessive} encyclopedic knowledge of every product evident in the way {pronoun} anticipates customer needs.",
+      "Sunlight catches the spotless surfaces and carefully arranged merchandise as {name} offers a welcoming smile that transforms a simple transaction into an opportunity to exceed expectations.",
+      "The shop runs like a well-orchestrated performance as {name} moves between perfectly organized sections, {possessive} refined customer service making even routine purchases feel like personalized consultations.",
+      "Quality radiates from every carefully curated display as {name} greets you with the polished manner of someone who has elevated general commerce into an art form."
+    ],
+    humble: [
+      "Items teeter in precarious stacks as {name} navigates the cramped aisles with practiced ease, {possessive} cheerful apologies for the clutter unable to hide the genuine care {pronoun} takes with every customer.",
+      "The overflowing shelves create a maze of merchandise as {name} emerges from behind a tower of goods, {possessive} enthusiasm for helping customers clearly exceeding {possessive} organizational systems.",
+      "Boxes crowd every available surface as {name} searches through the controlled chaos with determined optimism, {possessive} memory serving as the primary inventory system in this packed but heartfelt establishment.",
+      "The cramped quarters force creative navigation as {name} squeezes between displays to greet you, {possessive} willingness to stretch every copper piece evident in the diverse collection of practical goods.",
+      "Dust motes dance in the cluttered space as {name} looks up from restocking duties, {possessive} apologetic smile and helpful nature making up for what the shop lacks in polished presentation."
+    ],
+    standard: [
+      "The well-organized shelves reflect practical efficiency as {name} looks up from inventory tasks, {possessive} systematic approach creating an atmosphere where commerce and community naturally intersect.",
+      "Familiar products line accessible displays as {name} greets you with the easy recognition of someone who genuinely knows {possessive} regular customers' preferences and needs.",
+      "The shop hums with comfortable activity as {name} moves between sections with practiced ease, {possessive} balance of business sense and personal service evident in every interaction.",
+      "Reliable organization meets friendly service as {name} approaches with the confident manner of someone who has built a thriving business through consistent quality and fair dealing.",
+      "The practical layout serves the community well as {name} offers assistance with the experienced eye of someone who understands both {possessive} inventory and {possessive} customers' circumstances."
+    ]
+  },
+  "mystic goods": {
+    refined: [
+      "The air shimmers with carefully controlled mystical energies as {name} moves through the sacred space with ceremonial grace, every gesture suggesting deep communion with the ancient forces that permeate {possessive} carefully curated collection.",
+      "Crystalline light refracts through perfectly arranged artifacts as {name} greets you with the measured solemnity of a scholar-priest, {possessive} knowledge spanning both mystical tradition and academic theory.",
+      "The shop feels more like a temple than a marketplace as {name} approaches with reverent authority, {possessive} understanding of magical principles evident in the respectful way {pronoun} handles each precious item.",
+      "Incense and ethereal energies create an atmosphere of profound mystery as {name} offers guidance with the wisdom of someone who treats magical commerce as sacred trust between practitioner and seeker.",
+      "The very walls seem to pulse with arcane power as {name} pauses in {possessive} meditative work, {possessive} presence suggesting someone who has achieved true harmony between mystical knowledge and practical application."
+    ],
+    humble: [
+      "Candle wax and chalk dust mark {name}'s robes as {pronoun} hurriedly straightens a protective circle, the chaotic but charming shop buzzing with unpredictable magical energies and genuine enthusiasm.",
+      "Sparks of uncontrolled magic dance through the air as {name} apologetically steadies a wobbling crystal, {possessive} endearing mix of mystical ambition and practical limitations creating an atmosphere of hopeful experimentation.",
+      "The shop thrums with barely contained magical energy as {name} emerges from behind stacks of mysterious tomes, {possessive} excitement about the mystical path evident despite occasional mishaps with temperamental artifacts.",
+      "Protective symbols drawn in hasty chalk surround workspaces as {name} greets you with infectious wonder, clearly someone who treats every magical discovery as cause for celebration regardless of the modest presentation.",
+      "The air tingles with amateur enchantments as {name} sets aside a smoking incense burner, {possessive} genuine passion for mystical arts compensating for what {pronoun} lacks in formal training."
+    ],
+    standard: [
+      "The shop maintains a perfect balance between mystical wonder and practical accessibility as {name} looks up from organizing ritual components, {possessive} expertise making ancient magic feel approachable.",
+      "Controlled magical energies create an atmosphere of focused purpose as {name} greets you with confident understanding, clearly someone who respects mystical power while making it accessible to seekers of all levels.",
+      "Crystals and artifacts catch the light in carefully planned arrangements as {name} approaches with the assured manner of a practitioner who has found harmony between mystical knowledge and customer service.",
+      "The air carries the scent of herbs and sacred oils as {name} sets aside {possessive} current enchantment, {possessive} practical approach to magic evident in the organized efficiency of the mystical workspace.",
+      "Ancient symbols and modern convenience coexist peacefully as {name} offers assistance with the balanced perspective of someone who treats magic as both art and craft."
+    ]
+  },
+  "exotic goods": {
+    refined: [
+      "The shop resembles a private museum as {name} moves between displays with curatorial precision, each exotic piece positioned to tell its story while {possessive} extensive knowledge transforms browsing into cultural education.",
+      "Artifacts from distant lands catch the light as {name} approaches with the authority of a seasoned explorer, {possessive} deep understanding of foreign customs and trade routes evident in every carefully chosen piece.",
+      "The air carries hints of spices and distant shores as {name} greets you with scholarly enthusiasm, {possessive} collection representing years of careful curation and respect for the cultures that created these treasures.",
+      "Every item reflects both beauty and cultural significance as {name} offers guidance with the reverent expertise of someone who understands that exotic goods carry the stories of their makers across vast distances.",
+      "The shop serves as a bridge between worlds as {name} shares knowledge with professorial grace, {possessive} refined presentation making foreign wonders accessible while honoring their authentic cultural context."
+    ],
+    humble: [
+      "Shipping crates bearing foreign labels crowd the aisles as {name} sorts through mixed collections with infectious enthusiasm, {possessive} wonder at distant cultures evident despite incomplete knowledge of origins.",
+      "The cramped space overflows with mysteries as {name} emerges from behind stacks of exotic goods, {possessive} secondhand stories and genuine curiosity creating an atmosphere of shared discovery.",
+      "Items from unknown lands fill every surface as {name} searches through the organized chaos with determined optimism, {possessive} acquisition-based pricing often undervaluing treasures due to uncertain provenance.",
+      "The shop buzzes with the excitement of treasure hunting as {name} greets you with eager uncertainty, clearly someone who encourages customers to experiment and discover the purposes of mysterious items together.",
+      "Foreign scripts and unfamiliar artifacts create a maze of wonders as {name} navigates the cluttered space with enthusiastic confusion, {possessive} honest admission of limitations only adding to the sense of adventure."
+    ],
+    standard: [
+      "The organized diversity of the collection reflects thoughtful curation as {name} moves between cultural sections with confident knowledge, making exotic wonders accessible through clear explanations and fair pricing.",
+      "Items from distant lands find harmony in practical display as {name} greets you with the balanced expertise of someone who understands both foreign cultures and local needs.",
+      "The shop successfully bridges familiar and foreign as {name} offers guidance with reliable knowledge gained through experience and networking with traders from across the known world.",
+      "Cultural treasures and practical goods coexist comfortably as {name} approaches with the assured manner of someone who has built trust through honest dealing and cultural respect.",
+      "The well-organized exotic collection serves community curiosity as {name} provides assistance with the experienced eye of someone who helps customers use foreign goods appropriately and effectively."
+    ]
+  },
+  "jeweler": {
+    refined: [
+      "Precious stones catch the light from specialized fixtures as {name} looks up from a delicate setting, {possessive} surgeon-like precision and technical expertise evident in every careful movement around the gleaming workspace.",
+      "The shop sparkles with museum-quality displays as {name} approaches with scholarly grace, {possessive} deep knowledge of gemology and craftsmanship transforming jewelry shopping into educational consultation.",
+      "Each piece receives individual spotlighting as {name} greets you with the refined manner of someone who understands that fine jewelry represents both artistic achievement and lasting investment.",
+      "The workspace gleams with professional precision as {name} sets aside delicate tools, {possessive} discussion of provenance and technique revealing years of formal training and artistic development.",
+      "Precious metals and rare gems create an atmosphere of quiet luxury as {name} offers expertise with the cultured authority of someone who has elevated jewelry craft to high art."
+    ],
+    humble: [
+      "Half-finished repairs clutter the modest workbench as {name} looks up from a simple setting, {possessive} passionate appreciation for beautiful stones evident despite the humble presentation and limited resources.",
+      "The cramped workspace overflows with honest craftsmanship as {name} apologetically clears space, {possessive} focus on emotional significance over monetary value creating an atmosphere of heartfelt service.",
+      "Simple tools serve skilled hands as {name} greets you with genuine enthusiasm, {possessive} intuitive understanding of beauty compensating for what the shop lacks in formal gemological training.",
+      "Modest displays showcase careful work as {name} approaches with unpretentious warmth, clearly someone who helps customers find pieces that speak to the heart rather than impress the wallet.",
+      "The workshop shows honest effort over expensive equipment as {name} sets aside current repairs, {possessive} reverent care for even simple pieces reflecting true appreciation for the craft."
+    ],
+    standard: [
+      "Quality tools serve experienced hands as {name} looks up from precision work, the organized workspace reflecting someone who has found the perfect balance between technical skill and aesthetic sensibility.",
+      "The shop showcases a range serving every occasion as {name} greets you with professional warmth, {possessive} recommendations clearly considering both budget and the significance of each purchase.",
+      "Reliable craftsmanship meets fair pricing as {name} approaches with confident competence, the practical workshop atmosphere suggesting someone who takes pride in creating both beauty and value.",
+      "The efficient workspace reflects years of experience as {name} offers assistance with knowledgeable ease, clearly someone who understands both the technical and emotional aspects of fine jewelry.",
+      "Organized displays serve community needs as {name} provides guidance with the balanced perspective of someone who has built a thriving business through quality work and honest dealing."
+    ]
+  }
+};
+
+const shopkeeperBehaviors = {
+  "alchemist": {
+    refined: [
+      "{Name} measures ingredients with scientific precision, explaining the theoretical basis behind each mixture's properties",
+      "{Possessive} workspace reflects years of formal study, with pristine equipment and methodically labeled components arranged like a laboratory",
+      "{Pronoun} speaks in technical terms while wearing spotless gloves, treating each transaction as a consultation between professionals",
+      "Every movement suggests classical training, from the way {pronoun} handles delicate glassware to {possessive} systematic approach to brewing",
+      "{Possessive} knowledge runs deep, often referencing ancient texts and established formulas with the confidence of true expertise"
+    ],
+    humble: [
+      "{Possessive} hands bear permanent stains from countless experiments, and {pronoun} wipes them absently on an equally marked apron while speaking",
+      "{Pronoun} talks excitedly about failed experiments as much as successes, surrounded by the chaotic creativity of constant trial and error",
+      "Half-finished projects and improvised equipment fill every corner, while the scent of sulfur and herbs clings to everything {pronoun} touches",
+      "{Pronoun} apologizes for the mess while rummaging through unmarked bottles, relying more on memory and intuition than formal methods",
+      "{Possessive} enthusiasm compensates for {possessive} limited resources, often saying 'it almost worked last time' with genuine optimism"
+    ],
+    standard: [
+      "{Pronoun} maintains a functional workspace where practical knowledge trumps fancy equipment, brewing reliable potions with consistent results",
+      "{Possessive} approach balances book learning with hands-on experience, comfortable explaining both the how and why of {possessive} craft", 
+      "{Pronoun} keeps detailed notes in well-worn journals, treating {possessive} craft seriously while remaining approachable to customers",
+      "The scent of herbs and simmering broths creates a working atmosphere where quality matters more than presentation",
+      "{Pronoun} demonstrates {possessive} wares confidently, with the practiced ease of someone who knows {possessive} recipes work"
+    ]
+  },
+  "blacksmith": {
+    refined: [
+      "{Pronoun} moves with economy and precision, {possessive} workspace organized like a military operation where every tool has its place",
+      "The rhythmic ring of hammer on anvil follows measured patterns, each strike deliberate and calculated for maximum effect",
+      "{Pronoun} discusses metallurgy and heat treatment with the vocabulary of formal training, wearing leather aprons that show care rather than just use",
+      "{Possessive} forge burns at perfectly controlled temperatures while {pronoun} explains the properties of different alloys with scholarly authority",
+      "Even {possessive} casual demonstrations reveal decades of mastery, transforming raw metal into art with seemingly effortless skill"
+    ],
+    humble: [
+      "Sweat and soot mark {possessive} clothes and skin, while the forge radiates heat that makes conversation brief but heartfelt",
+      "{Pronoun} works with salvaged tools and improvised techniques, making up for limited resources with determination and creative problem-solving",
+      "The constant hammering echoes {possessive} relentless work ethic, often pausing mid-conversation to tend the forge before it cools",
+      "{Possessive} rough hands show the cost of {possessive} trade, while {pronoun} apologizes for the noise and heat with genuine concern for customer comfort",
+      "{Pronoun} takes pride in honest work, even when the results are functional rather than beautiful, focusing on durability over decoration"
+    ],
+    standard: [
+      "The steady rhythm of {possessive} work creates a dependable atmosphere where skill meets practical experience in comfortable partnership",
+      "{Pronoun} balances traditional techniques with personal innovations, confident in {possessive} methods while remaining open to new ideas",
+      "Heat radiates from the working forge while {pronoun} discusses projects with the easy authority of someone who knows {possessive} craft",
+      "{Possessive} workspace shows the organized chaos of active production, where everything serves a purpose in the larger workflow",
+      "{Pronoun} demonstrates techniques with practiced confidence, explaining {possessive} process while working with smooth, economical movements"
+    ]
+  },
+  "general store": {
+    refined: [
+      "{Pronoun} glides between displays with graceful efficiency, knowing exactly where everything is located and maintaining pristine organization",
+      "{Possessive} customer service feels polished and professional, treating each transaction as an opportunity to exceed expectations",
+      "The store reflects {possessive} attention to detail, from perfectly aligned merchandise to meticulously maintained inventory records",
+      "{Pronoun} discusses products with encyclopedic knowledge, able to recommend exactly what customers need while suggesting complementary items",
+      "Every interaction demonstrates {possessive} commitment to quality, from the careful wrapping of purchases to {possessive} follow-up questions about satisfaction"
+    ],
+    humble: [
+      "{Pronoun} navigates between precariously stacked merchandise and overflowing shelves, apologizing for the clutter while searching for requested items",
+      "{Possessive} enthusiasm for helping customers often exceeds {possessive} organizational systems, relying on memory and experience to locate inventory",
+      "The cramped space forces creative storage solutions, while {pronoun} chats apologetically about items that might be 'somewhere in the back'",
+      "{Pronoun} stretches every copper piece, offering alternatives when preferred items aren't available and genuinely caring about customer needs",
+      "{Possessive} knowledge comes from practical necessity rather than formal training, but {possessive} advice proves surprisingly reliable"
+    ],
+    standard: [
+      "{Pronoun} maintains a well-organized system that serves the community reliably, knowing {possessive} regular customers' preferences and needs",
+      "The store reflects {possessive} experience in practical efficiency; {pronoun} knows where everything is located with ease and can easily recall pricing without looking it up",
+      "{Pronoun} balances business sense with personal service, offering fair prices while building relationships with repeat customers",
+      "{Possessive} recommendations come from experience and observation, understanding both {possessive} inventory and {possessive} customers' circumstances",
+      "{Possessive} atmosphere suggests competent management and community focus, where commerce and conversation happen in comfortable partnership"
+    ]
+  },
+  "mystic goods": {
+    refined: [
+      "{Pronoun} moves through {possessive} shop with ceremonial grace, {possessive} gestures seeming to channel the mystical energies that permeate the space",
+      "{Possessive} knowledge spans ancient traditions and modern applications, discussing magical theory with academic precision and reverent respect",
+      "The air around {pronoun} shimmers faintly with residual magic while {pronoun} handles artifacts with the solemnity of religious observance",
+      "{Pronoun} speaks in measured cadences about the deeper meanings behind {possessive} wares, treating each sale as a sacred trust between practitioner and client",
+      "{Possessive} expertise extends beyond mere commerce into genuine mystical counsel, offering wisdom alongside {possessive} carefully curated inventory"
+    ],
+    humble: [
+      "{Pronoun} fumbles occasionally with unstable magical items, apologizing when sparks fly or unexpected effects manifest during demonstrations",
+      "{Possessive} shop runs on charm, chaos, and just enough magic to make you wonder if {pronoun} actually knows what {pronoun}'s doing",
+      "Candle wax and chalk dust mark {possessive} clothes while {pronoun} rearranges protective circles and mutters incantations under {possessive} breath",
+      "{Pronoun} treats customers like fellow seekers on the mystical path, sharing stories of magical mishaps with self-deprecating humor",
+      "{Possessive} shop buzzes with uncontrolled energy while {pronoun} explains that most items 'work better for some people than others'"
+    ],
+    standard: [
+      "{Pronoun} demonstrates a practical understanding of magical principles, balancing mystical knowledge with down-to-earth customer service",
+      "The air tingles with controlled magical energy while {pronoun} discusses applications and proper usage with confident expertise",
+      "{Pronoun} treats magic as both art and craft, respecting its power while making it accessible to customers of varying experience levels",
+      "{Possessive} workspace shows the organized efficiency of someone who understands both the mystical and mundane aspects of {possessive} trade",
+      "{Pronoun} offers guidance alongside {possessive} goods, helping customers choose items that match their intentions and skill levels"
+    ]
+  },
+  "exotic goods": {
+    refined: [
+      "{Pronoun} moves between displays like a curator in a private museum, explaining the cultural significance and proper applications of each piece",
+      "{Possessive} knowledge spans continents and cultures, discussing trade routes and origin stories with the authority of a seasoned explorer",
+      "{Pronoun} handles each item with reverent care, understanding both its practical value and its deeper meaning within its culture of origin",
+      "The stories {pronoun} tells transport customers to distant lands, while {possessive} expertise helps navigate the complexities of foreign customs and uses",
+      "{Possessive} collection reflects years of careful curation, where every piece has been selected for quality and authentic cultural significance"
+    ],
+    humble: [
+      "{Pronoun} sorts through mixed collections with infectious enthusiasm, often discovering forgotten treasures while searching for customer requests",
+      "{Possessive} stories blend secondhand accounts with genuine wonder, admitting when {pronoun}'s not entirely sure of an item's origin or purpose",
+      "The cramped space overflows with mysteries from distant lands, while {pronoun} rummages through shipping crates still bearing foreign labels",
+      "{Pronoun} relies on intuition and customer curiosity rather than formal expertise, encouraging buyers to experiment and discover for themselves",
+      "{Possessive} prices reflect acquisition costs rather than scholarly assessment, often underselling valuable pieces due to incomplete knowledge"
+    ],
+    standard: [
+      "{Pronoun} maintains an organized system that showcases the diversity of {possessive} collection while helping customers navigate unfamiliar territories",
+      "{Possessive} knowledge comes from experience and networking with traders, offering reliable information about practical applications and cultural context",
+      "{Pronoun} reflects a balance between wonder and reverence for their wares, as they handle delicate items that have traveled",
+      "{Pronoun} connects customers with the wares they seek based on genuine understanding of both foreign cultures and local needs",
+      "{Possessive} recommendations blend cultural respect with practical considerations, helping customers use exotic goods appropriately and effectively"
+    ]
+  },
+  "jeweler": {
+    refined: [
+      "{Pronoun} handles precious stones with the delicate precision of a surgeon, explaining cut, clarity, and setting techniques with technical expertise",
+      "{Possessive} workspace gleams under specialized lighting that reveals every facet and flaw, while {pronoun} discusses the metaphysical properties of different gems",
+      "{Pronoun} moves with practiced grace around delicate displays, {possessive} knowledge spanning both the technical and artistic aspects of {possessive} craft",
+      "Each piece receives individual attention as {pronoun} explains provenance, craftsmanship techniques, and proper care with scholarly thoroughness",
+      "{Possessive} consultation style transforms shopping into education, helping customers understand the lasting value and significance of fine jewelry"
+    ],
+    humble: [
+      "{Pronoun} works at a cluttered bench where half-finished repairs mingle with simple settings, apologizing for the modest presentation of {possessive} skills",
+      "{Possessive} enthusiasm for beautiful stones outweighs {possessive} formal training, relying on intuition and natural taste rather than gemological certification",
+      "{Pronoun} handles pieces with reverent care despite {possessive} simple tools, discussing beauty and personal meaning rather than investment potential",
+      "The workspace shows honest craftsmanship over expensive equipment, where skill compensates for limited resources and formal training",
+      "{Pronoun} focuses on emotional significance rather than monetary value, helping customers find pieces that speak to the heart rather than the purse"
+    ],
+    standard: [
+      "{Pronoun} balances technical knowledge with aesthetic sense, discussing both the practical and beautiful aspects of {possessive} carefully selected inventory",
+      "{Possessive} workspace reflects organized professionalism where quality tools serve skilled hands in creating both simple and complex pieces",
+      "{Pronoun} demonstrates techniques with confident competence, explaining {possessive} process while working with economical precision and practiced ease",
+      "The shop showcases a range that serves both everyday needs and special occasions, with prices that reflect fair value rather than luxury markup",
+      "{Possessive} recommendations consider both budget and occasion, helping customers find pieces that offer the best combination of beauty and value"
+    ]
+  }
+};
+
+const getShopRefinement = (priceModifier: number): "refined" | "standard" | "humble" => {
+  if (priceModifier > 0.15) return "refined";
+  if (priceModifier < -0.15) return "humble";
+  return "standard";
+};
+
+
+  // Modified generateShopkeeperDescription to return both final description and template
+
+  const generateShopkeeperDescriptionWithTemplate = (shopkeeper, priceModifier) => {
+  const refinement = getShopRefinement(priceModifier);
+  const normalizedShopType = shopkeeper.shopType.toLowerCase();
+  
+  // Get introduction based on shop type and refinement
+  const introOptions = shopkeeperIntroductions[normalizedShopType]?.[refinement] || 
+                      shopkeeperIntroductions["general store"][refinement];
+  
+  const introduction = introOptions[Math.floor(Math.random() * introOptions.length)];
+  
+  // Get behavior
+  const behaviorOptions = shopkeeperBehaviors[normalizedShopType]?.[refinement] || 
+                         shopkeeperBehaviors["general store"][refinement];
+  const behavior = behaviorOptions[Math.floor(Math.random() * behaviorOptions.length)];
+
+  // Create template with placeholders intact
+  const template = `${introduction} ${behavior}.`;
+  
+  // Create final description with actual values
+  const finalDescription = applyNameAndPronouns(template, shopkeeper.name, shopkeeper.race);
+
+  return {
+    finalDescription,
+    template
+  };
+};
+
+// Pronoun detection
+
+// New function to apply name and pronouns to a description template
+const applyNameAndPronouns = (template: string, name: string, race: string) => {
+  const firstName = name.split(' ')[0];
+  const pronouns = getShopkeeperPronouns(name);
+  
+  return template
+    .replace(/\{name\}/g, firstName)
+    .replace(/\{object\}/g, pronouns.object)
+    .replace(/\{Pronoun\}/g, pronouns.pronoun.charAt(0).toUpperCase() + pronouns.pronoun.slice(1))
+    .replace(/\{Possessive\}/g, pronouns.possessive.charAt(0).toUpperCase() + pronouns.possessive.slice(1))
+    .replace(/\{pronoun\}/g, pronouns.pronoun)
+    .replace(/\{possessive\}/g, pronouns.possessive)
+    .replace(/\{reflexive\}/g, pronouns.reflexive)
+    .replace(/\{genderNoun\}/g, pronouns.genderNoun);
+};
+
+const femaleNames = ['Alaia', 'Amara', 'Amina', 'Amira', 'Anika', 'Anouk', 'Astrid', 'Ayo', 'Aziza', 'Carmen', 'Dara', 'Elske', 'Esi', 'Fatima', 'Fatou', 'Freja', 'Hadiya', 'Hei', 'Imani', 'Ines', 'Ingrid', 'Jasmine', 'Kaja', 'Layla', 'Leilani', 'Lian', 'Liv', 'Lucia', 'Maartje', 'Maren', 'Marisol', 'Matthijs', 'Mina', 'Nadia', 'Naomi', 'Nia', 'Noa', 'Noor', 'Rina', 'Roos', 'Soraya', 'Stellan', 'Suki', 'Yasmin', 'Zahra', 'Zara', 'Thraina', 'Sigrid', 'Halga', 'Durra', 'Thora', 'Gudrun', 'Eluna', 'Sylmae', 'Ishara', 'Lirael', 'Zireen', 'Nyrieth', 'Arenya', 'Tilda', 'Merrin', 'Posy', 'Fenna', 'Hattie', 'Minta', 'Reni', 'Tinka', 'Zinki', 'Miri', 'Frayla', 'Jixi', 'Zuzu', 'Mira', 'Saela', 'Nyra', 'Isryn', 'Zeva', 'Orielle', 'Thoka', 'Zarra', 'Umma', 'Ketha', 'Hasska', 'Mazra', 'Sukka', 'Ashira', 'Azia', 'Neriseth', 'Kaiva', 'Velkira', 'Nyzora', 'Miraxi', 'Yureth'];
+
+// Shared pronoun logic using the same female names list
+const getShopkeeperPronouns = (shopkeeperName) => {
+  const firstName = shopkeeperName.split(' ')[0];
+  const isFemale = femaleNames.includes(firstName); // Now references the top-level array
+  return {
+    possessive: isFemale ? 'her' : 'his',
+    pronoun: isFemale ? 'she' : 'he',
+    object: isFemale ? 'her' : 'him',
+    reflexive: isFemale ? 'herself' : 'himself',
+    genderNoun: isFemale ? 'woman' : 'man'
+  };
+};
+
+// Shopkeeper description
+
+
+const generateShopkeeperDescription = (shopkeeper, priceModifier) => {
+  const refinement = getShopRefinement(priceModifier);
+  const normalizedShopType = shopkeeper.shopType.toLowerCase();
+  
+  // Determine gender and pronouns
+  const firstName = shopkeeper.name.split(' ')[0];
+  const isFemale = femaleNames.includes(firstName);
+  const pronouns = {
+    pronoun: isFemale ? 'she' : 'he',
+    object: isFemale ? 'her' : 'him',
+    possessive: isFemale ? 'her' : 'his',
+    reflexive: isFemale ? 'herself' : 'himself',
+    genderNoun: isFemale ? 'woman' : 'man'
+  };
+
+
+  // Get introduction based on shop type and refinement
+  const introOptions = shopkeeperIntroductions[normalizedShopType]?.[refinement] || 
+   shopkeeperIntroductions["general store"][refinement];
+  
+  let introduction = introOptions[Math.floor(Math.random() * introOptions.length)];
+  
+  // Replace placeholders with actual values
+  introduction = introduction.replace(/\{name\}/g, firstName)
+    .replace(/\{object\}/g, pronouns.object)
+    .replace(/\{pronoun\}/g, pronouns.pronoun)
+    .replace(/\{possessive\}/g, pronouns.possessive)
+    .replace(/\{reflexive\}/g, pronouns.reflexive)
+    .replace(/\{genderNoun\}/g, pronouns.genderNoun);
+
+  // Get behavior (keeping your existing system)
+  const behaviorOptions = shopkeeperBehaviors[normalizedShopType]?.[refinement] || 
+    shopkeeperBehaviors["general store"][refinement];
+  let behavior = behaviorOptions[Math.floor(Math.random() * behaviorOptions.length)];
+
+  // Apply pronoun replacements to behavior (keeping your existing logic)
+  behavior = behavior.replace(/\{name\}/g, firstName)
+  .replace(/\{object\}/g, pronouns.object)
+  .replace(/\{Pronoun\}/g, pronouns.pronoun.charAt(0).toUpperCase() + pronouns.pronoun.slice(1))
+  .replace(/\{Possessive\}/g, pronouns.possessive.charAt(0).toUpperCase() + pronouns.possessive.slice(1))
+  .replace(/\{pronoun\}/g, pronouns.pronoun)
+  .replace(/\{possessive\}/g, pronouns.possessive)
+  .replace(/\{reflexive\}/g, pronouns.reflexive)
+  .replace(/\{genderNoun\}/g, pronouns.genderNoun);
+
+  return `${introduction} ${behavior}.`;
+};
 
 function ShopkeeperGenerator() {
   const [shopkeeper, setShopkeeper] = useState(null);
@@ -7,9 +413,88 @@ function ShopkeeperGenerator() {
   const [settlementSize, setSettlementSize] = useState('');
   const [fadeCommon, setFadeCommon] = useState(false);
   const [fadeRare, setFadeRare] = useState(false);
-  const [controlsExpanded, setControlsExpanded] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isRaceDropdownOpen, setIsRaceDropdownOpen] = useState(false);
+  const [isSettlementDropdownOpen, setIsSettlementDropdownOpen] = useState(false);
+  const [isShopTypeDropdownOpen, setIsShopTypeDropdownOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('any');
+  const [inventorySort, setInventorySort] = useState('alpha');
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
+  const getCurrentPricingText = () => {
+    // Handle case where selectedPricingStyle is still 'random' or invalid
+    if (selectedPricingStyle === 'random') return 'Standard';
+    
+    const index = parseInt(selectedPricingStyle);
+    if (isNaN(index) || index < 0 || index >= pricingStyles.length) {
+      return 'Standard'; // Fallback for invalid indices
+    }
+    
+    const style = pricingStyles[index];
+    if (!style) return 'Standard'; // Extra safety check
+    
+    return style.modifier > 0
+      ? `${Math.abs(style.modifier * 100).toFixed(0)}% Above`
+      : style.modifier < 0
+      ? `${Math.abs(style.modifier * 100).toFixed(0)}% Below`
+      : 'Standard';
+  };
   
+// Combine and filter inventory
+const getCombinedInventory = () => {
+  if (!shopkeeper) return [];
+  
+  const combined = [
+    ...shopkeeper.commonItems.map(item => ({ ...item, type: 'common' })),
+    ...shopkeeper.rareItems.map(item => ({ ...item, type: 'rare' }))
+  ];
+  
+  // Filter by category
+  const filtered = selectedCategory === 'any' 
+    ? combined 
+    : combined.filter(item => {
+        const categoryInfo = getCategoryForItem(item.name);
+        return categoryInfo.category === selectedCategory;
+      });
+  
+  // Sort the filtered results
+  return sortItems(filtered, inventorySort);
+};
+
+// Get unique categories from current inventory
+const getAvailableCategories = (): string[] => {
+  if (!shopkeeper) return [];
+  
+  const combined = [
+    ...shopkeeper.commonItems,
+    ...shopkeeper.rareItems
+  ];
+  
+  const categories = new Set<string>();
+  combined.forEach(item => {
+    const categoryInfo = getCategoryForItem(item.name);
+    categories.add(categoryInfo.category);
+  });
+  
+  return Array.from(categories).sort();
+};
+
+const regenerateDescriptionForPricing = (newPriceModifier) => {
+  const descriptionData = generateShopkeeperDescriptionWithTemplate({
+    name: shopkeeper.name,
+    race: shopkeeper.race,
+    shopType: shopkeeper.shopType
+  }, newPriceModifier);
+  
+  return {
+    description: descriptionData.finalDescription,
+    descriptionTemplate: descriptionData.template
+  };
+};
+
   // Data for random generation
+
+    // Names
   const races = ['Human', 'Dwarf', 'Elf', 'Halfling', 'Gnome', 'Half-Elf', 'Half-Orc', 'Tiefling', 'Dragonborn'];
   
    const firstNames = {
@@ -38,48 +523,8 @@ function ShopkeeperGenerator() {
 };
 
   
- 
-  const personalities = [
-    'Cheerful and talkative',
-    'Grumpy but fair',
-    'Shrewd and calculating',
-    'Mysterious and cryptic',
-    'Enthusiastic about their wares',
-    'Extremely suspicious of outsiders',
-    'Absent-minded professor type',
-    'Boisterous and loud',
-    'Soft-spoken and shy',
-    'Flirtatious with all customers'
-  ];
+  // Shopkeeper description details
   
-  const quirks = [
-    'Constantly reorganizing shelves',
-    'Has a pet that helps around the shop',
-    'Speaks in third person',
-    'Collects odd trinkets from customers',
-    'Uses unusual metaphors',
-    'Hums or sings while working',
-    'Claims items have more history than they do',
-    'Has an imaginary assistant',
-    'Refuses to handle certain materials',
-    'Extremely superstitious'
-  ];
-  
-  const appearances = [
-    'Immaculately dressed in fine clothes',
-    'Covered in soot and burn marks',
-    'Adorned with trinkets from their own shop',
-    'Missing a few fingers',
-    'Has unusual colored eyes',
-    'Always wearing multiple layers regardless of weather',
-    'Covered in tattoos of arcane symbols',
-    'Unusually tall for their race',
-    'Unusually short for their race',
-    'Has magnificent hair',
-    'Has a magnificent beard',
-    'Always wearing a distinctive hat'
-  ];
-
   const pricingStyles = [
     { style: 'Fair and reasonable', modifier: 0 },
     { style: 'Premium prices for "quality"', modifier: 0.2 },
@@ -103,28 +548,183 @@ function ShopkeeperGenerator() {
   const shopIcons = {
   'General Store': "box",
   'Blacksmith': "swords", 
-  'Alchemist': "experiment",
+  'Alchemist': FlaskIcon,
   'Mystic Goods': "wand_stars",
   'Exotic Goods': "festival",
   'Jeweler': "diamond"
 };
 
-  const shopAdjectives = [
-    'Rusty', 'Golden', 'Silver', 'Emerald', 'Crimson', 'Mystic', 'Arcane', 
-    'Twisted', 'Dancing', 'Hidden', 'Lucky', 'Ancient', 'Curious', 'Wandering'
-  ];
+// Shopkeeper titles by refinement and trade
+const shopkeeperTitles = {
+  refined: {
+    'General Store': ['Master Merchant', 'Grand Trader', 'Purveyor Royal'],
+    'Blacksmith': ['Grandmaster', 'Master Smith', 'Forgemaster'],
+    'Alchemist': ['Master Alchemist', 'Arcane Brewmaster', 'Grand Artificer'],
+    'Mystic Goods': ['Arcane Master', 'High Mystic', 'Grand Enchanter'],
+    'Exotic Goods': ['Master Trader', 'Grand Collector', 'Royal Purveyor'],
+    'Jeweler': ['Master Jeweler', 'Grandmaster Cutter', 'Royal Gemsmith']
+  },
+  standard: {
+    'General Store': ['Trader', 'Merchant', 'Shopkeep'],
+    'Blacksmith': ['Smith', 'Craftsman', 'Forger'],
+    'Alchemist': ['Alchemist', 'Brewmaster', 'Artificer'],
+    'Mystic Goods': ['Mystic', 'Enchanter', 'Curator'],
+    'Exotic Goods': ['Trader', 'Collector', 'Purveyor'],
+    'Jeweler': ['Jeweler', 'Gemcutter', 'Craftsman']
+  },
+  humble: {
+    'General Store': ['Old', 'Young', 'Honest'],
+    'Blacksmith': ['Old', 'Steady', 'Reliable'],
+    'Alchemist': ['Old', 'Wise', 'Humble'],
+    'Mystic Goods': ['Old', 'Wandering', 'Humble'],
+    'Exotic Goods': ['Old', 'Traveling', 'Wandering'],
+    'Jeweler': ['Old', 'Patient', 'Careful']
+  }
+};
+
+// Settlement descriptors
+const settlementDescriptors = {
+  village: ['Village', 'Hamlet', 'Glen', 'Crossing', 'Vale'],
+  town: ['Market', 'Town', 'Borough', 'Square', 'Fair'],
+  city: ['Grand', 'High', 'Royal', 'Great', 'Imperial']
+};
+
+// Race-influenced naming styles
+const raceNamingStyles = {
+  'Dwarf': ['Clan', 'Hall', '& Sons', 'Hold', 'Keep'],
+  'Elf': ['Court', 'Grove', 'House', 'Glade', 'Sanctuary'],
+  'Halfling': ['Hearth', 'Hill', 'Garden', 'Home', 'Burrow'],
+  'Human': ['House', 'Hall', 'Works', '& Co.', 'Workshop'],
+  'Gnome': ['Workshop', 'Tinker', 'Works', 'Lab', 'Study'],
+  'Half-Elf': ['House', 'Grove', 'Workshop', 'Studio', 'Gallery'],
+  'Half-Orc': ['Hold', 'Works', 'Shop', 'Hall', 'Forge'],
+  'Tiefling': ['House', 'Sanctum', 'Workshop', 'Studio', 'Haven'],
+  'Dragonborn': ['Hall', 'House', 'Hold', 'Sanctum', 'Workshop']
+};
+
+// Shop-specific adjectives that match each trade's personality
+const shopAdjectives = {
+  'General Store': ['Lucky', 'Wandering', 'Busy', 'Corner', 'Village', 'Crossroads', 'Humble', 'Friendly', 'Reliable', 'Honest'],
+  'Blacksmith': ['Blazing', 'Molten', 'Forged', 'Tempered', 'Hardened', 'Iron', 'Steel', 'Crimson', 'Burning', 'Thunder'],
+  'Alchemist': ['Bubbling', 'Mystic', 'Experimental', 'Precise', 'Volatile', 'Arcane', 'Brewing', 'Whispering', 'Smoking', 'Curious'],
+  'Mystic Goods': ['Veiled', 'Ethereal', 'Whispered', 'Enigmatic', 'Hidden', 'Ancient', 'Celestial', 'Shadowed', 'Luminous', 'Sacred'],
+  'Exotic Goods': ['Wandering', 'Distant', 'Foreign', 'Rare', 'Curious', 'Traveling', 'Global', 'Mysterious', 'Far-flung', 'Nomad'],
+  'Jeweler': ['Brilliant', 'Polished', 'Faceted', 'Lustrous', 'Gleaming', 'Radiant', 'Precious', 'Sparkling', 'Golden', 'Silver']
+};
+
+// Expanded nouns with more variety per shop type
+const shopNouns = {
+  'General Store': ['Trading Post', 'Goods', 'Market', 'Supplies', 'Wares', 'Bazaar', 'Emporium', 'Outfitter', 'Mercantile', 'Provisions'],
+  'Blacksmith': ['Forge', 'Anvil', 'Hammer', 'Blade', 'Steel', 'Iron', 'Weapon', 'Smithy', 'Ironworks', 'Foundry'],
+  'Alchemist': ['Potion', 'Brew', 'Elixir', 'Concoctions', 'Vial', 'Mixture', 'Philter', 'Experiments', 'Apothecary', 'Distillery'],
+  'Mystic Goods': ['Curio', 'Wonder', 'Arcanum', 'Glyph', 'Rune', 'Enchantment', 'Sigil', 'Spellwork', 'Charm', 'Binding', 'Sanctum', 'Oracle'],
+  'Exotic Goods': ['Oddities', 'Curiosities', 'Wonder', 'Rarities', 'Import', 'Goods', 'Treasure', 'Magnificent', 'Bazaar', 'Gallery'],
+  'Jeweler': ['Gem', 'Jewel', 'Ring', 'Crown', 'Gold', 'Bauble', 'Ornament', 'Boutique', 'Atelier', 'Collection']
+};
+
+// Multiple naming patterns for variety
+const namingPatterns = {
+  'General Store': [
+    'The {adjective} {noun}',
+    '{adjective} {noun}',
+    'The {noun} & More',
+    '{adjective} {noun} Co.',
+    'The {adjective} Merchant',
+    '{firstName}\'s {noun}',
+    'The {settlement} {noun}',
+    '{firstName}\'s {race_style}'
+  ],
+  'Blacksmith': [
+    'The {adjective} {noun}',
+    '{adjective} {noun}',
+    '{adjective} {noun} Works',
+    'The {noun} & Hammer',
+    '{adjective} Smithy',
+    '{firstName}\'s {noun}',
+    '{title} {firstName}\'s Forge',
+    '{firstName}\'s {race_style}'
+  ],
+  'Alchemist': [
+    'The {adjective} {noun}',
+    '{adjective} {noun}',
+    'The {adjective} Alchemist',
+    '{adjective} {noun} & Co.',
+    'The {noun} Laboratory',
+    '{firstName}\'s {noun}',
+    '{title} {firstName}\'s Workshop',
+    'The {settlement} {noun}'
+  ],
+  'Mystic Goods': [
+    'The {adjective} {noun}',
+    '{adjective} {noun}',
+    'The {noun} Sanctum',
+    '{adjective} Mysteries',
+    'The {adjective} Circle',
+    '{firstName}\'s {noun}',
+    'The {settlement} {noun}',
+    '{firstName}\'s {race_style}'
+  ],
+  'Exotic Goods': [
+    'The {adjective} {noun}',
+    '{adjective} {noun}',
+    'The {adjective} Trader',
+    '{adjective} {noun} Trading',
+    'The {noun} Caravan',
+    '{firstName}\'s {noun}',
+    'The {settlement} {noun}',
+    '{firstName}\'s {race_style}'
+  ],
+  'Jeweler': [
+    'The {adjective} {noun}',
+    '{adjective} {noun}',
+    'The {adjective} Jeweler',
+    '{adjective} {noun} Boutique',
+    'The {noun} Gallery',
+    '{firstName}\'s {noun}',
+    '{title} {firstName}\'s Studio',
+    'The {settlement} {noun}'
+  ]
+};
+
+// Function to generate shop name based on shop type
+const generateShopName = (shopType, shopkeeperName, shopkeeperRace, settlementSize, priceModifier) => {
+  const normalizedShopType = shopType;
+  const refinement = getShopRefinement(priceModifier);
+  const firstName = shopkeeperName ? shopkeeperName.split(' ')[0] : '';
   
-  const shopNouns = {
-    'General Store': ['Trading Post', 'Goods', 'Market', 'Supplies', 'Wares', 'Bazaar', 'Emporium', 'Outfitter'],
-    'Blacksmith': ['Forge', 'Anvil', 'Hammer', 'Blade', 'Steel', 'Iron', 'Weapon'],
-    'Alchemist': ['Potion', 'Brew', 'Elixir', 'Concoction', 'Vial', 'Mixture', 'Philter'],
-    'Mystic Goods': ['Curio','Wonder', 'Arcanum','Glyph', 'Rune', 'Enchantment', 'Sigil', 'Spellwork', 'Charm', 'Binding'],
-    'Exotic Goods': ['Oddity', 'Curiosity', 'Wonder', 'Rarity', 'Import', 'Exotic', 'Treasure'],
-    'Jeweler': ['Gem', 'Jewel', 'Ring', 'Crown', 'Gold', 'Bauble', 'Ornament']
-  };
+  // Get shop-specific adjectives and nouns
+  const adjectives = shopAdjectives[normalizedShopType] || shopAdjectives['General Store'];
+  const nouns = shopNouns[normalizedShopType] || shopNouns['General Store'];
+  const patterns = namingPatterns[normalizedShopType] || namingPatterns['General Store'];
+  
+  // Get new elements
+  const titles = shopkeeperTitles[refinement][normalizedShopType] || shopkeeperTitles[refinement]['General Store'];
+  const settlements = settlementDescriptors[settlementSize] || settlementDescriptors['town'];
+  const raceStyles = raceNamingStyles[shopkeeperRace] || raceNamingStyles['Human'];
+  
+  // Randomly select components
+  const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const noun = nouns[Math.floor(Math.random() * nouns.length)];
+  const title = titles[Math.floor(Math.random() * titles.length)];
+  const settlement = settlements[Math.floor(Math.random() * settlements.length)];
+  const raceStyle = raceStyles[Math.floor(Math.random() * raceStyles.length)];
+  const pattern = patterns[Math.floor(Math.random() * patterns.length)];
+  
+  // Replace placeholders in the selected pattern
+  const shopName = pattern
+    .replace('{adjective}', adjective)
+    .replace('{noun}', noun)
+    .replace('{firstName}', firstName)
+    .replace('{title}', title)
+    .replace('{settlement}', settlement)
+    .replace('{race_style}', raceStyle);
+  
+  return shopName;
+};
   
 
- // Fantasy Shop Item Database
+ // Shop Item Database
+
 const shopItems = {
   'Alchemist': [
     { name: 'Acid Vial', price: '25 gp', level: 'Common', details: 'Deals 2d6 acid damage when thrown (range 20/60). Caustic liquid that smokes when exposed to air.' },
@@ -572,104 +1172,145 @@ const [rareSort, setRareSort] = useState<'alpha' | 'price-asc' | 'price-desc'>('
 const sortedCommon = shopkeeper ? sortItems(shopkeeper.commonItems, commonSort) : [];
 const sortedRare = shopkeeper ? sortItems(shopkeeper.rareItems, rareSort) : [];
 
-// Motto logic
+// Enhanced Motto logic with personality and refinement system integration
+const shopkeeperMottos = {
+  "alchemist": {
+    refined: [
+      "My family's formulas have graced royal courts for three generations. Precision demands proper compensation.",
+      "The Academy taught me that true mastery requires the finest ingredients, and excellence has its price.",
+      "Each potion carries fifty years of accumulated knowledge. Quality like this isn't found in back-alley brewshops.",
+      "I've turned alchemy into an exact science. My results speak for themselves, as do my prices."
+    ],
+    humble: [
+      "My grandmother's recipes, my innovations, your problems solved through three generations of brewing wisdom.",
+      "Every potion tells a story. Most end happily. Some... well, that's why I keep antidotes handy.",
+      "Started mixing remedies during the last featherlung plague in Faerun. Haven't lost a customer to poor brewing since.",
+      "They say I'm half-mad, but my potions work. Besides, who trusts a completely sane alchemist?"
+    ],
+    standard: [
+      "Thirty years of happy accidents and careful measurements. Sometimes I surprise even myself.",
+      "Survived drinking my own experiments for fifteen years. That should tell you something about the quality.",
+      "Good alchemy takes time and care. I charge fairly for products that actually works.",
+      "Been brewing since before the war. My customers trust me because my potions do what they promise."
+    ]
+  },
+
+  "blacksmith": {
+    refined: [
+      "Been forging since before you were born. Good metal's worth every copper, and mine's the finest.",
+      "My father's hammer, my grandfather's anvil, my reputation. Excellence costs what it costs.",
+      "Saved three kings with my blades. You think quality like this comes cheap?",
+      "This isn't some run of the mill smithy. You're paying for mastery that took decades to perfect."
+    ],
+    humble: [
+      "Good work shouldn't break the bank. Learned that from my mentor, rest his soul.",
+      "My old da always said: 'Fair prices forge loyal customers.'",
+      "Been blessed with steady hands and a generous heart. Both show in my work.",
+      "Started with nothing but a dream and a rusty hammer. Never forgot where I came from."
+    ],
+    standard: [
+      "Honest steel, honest prices, honest work. Been serving this community for twenty years.",
+      "My forge runs hot and my prices stay fair. That's how you build a reputation.",
+      "Every piece tells a story. Most end with satisfied customers and repeat business.",
+      "The metal speaks to those who listen. I just help it find its proper shape."
+    ]
+  },
+
+  "general store": {
+    refined: [
+      "Four generations of curated excellence. We don't just stock items, we guarantee quality.",
+      "My establishment serves only the finest adventurers with the finest goods. Standards matter.",
+      "Started small, but success has its privileges. Premium service commands premium prices.",
+      "Every item personally selected for quality and utility. You're paying for expertise, not just goods."
+    ],
+    humble: [
+      "Started with three copper and a wheelbarrow. Never forgot what it's like to count every coin.",
+      "My late partner always said 'happy customers return, angry ones spread rumors.' I price accordingly.",
+      "Been the backbone of this community through feast and famine. We all look out for each other.",
+      "If you need it, I probably have it. If I don't, I'll find it at a price that won't break you."
+    ],
+    standard: [
+      "Four generations serving adventurers. If we don't stock it, you won't need it underground.",
+      "Watched the youngins become heroes in my shop. Proper gear makes all the difference, trust me.",
+      "Survived two wars and three economic crashes by knowing what people actually need.",
+      "Honest prices, honest goods, honest dealing. It's kept us in business all these years."
+    ]
+  },
+
+  "mystic goods": {
+    refined: [
+      "True magic demands true sacrifice. Usually in the form of appropriate compensation.",
+      "The arcane arts chose me young. Decades of mastery deserve proper recognition.",
+      "You're not just buying trinkets, you're buying knowledge that took a lifetime to accumulate.",
+      "Cheap magic is dangerous magic. I prefer my customers successful and whole."
+    ],
+    humble: [
+      "Magic should serve everyone, not just the wealthy. Knowledge brings prosperity to all.",
+      "The spirits whisper that knowledge shared is knowledge doubled.",
+      "My coven taught me generosity brings more power than greed ever could.",
+      "Been cursed with good fortune and a soft heart. Both tend to show in my prices."
+    ],
+    standard: [
+      "The mystical path requires balance. In power, in wisdom, and in fair exchange.",
+      "Magic items choose their owners. I just make sure the price matches the destiny.",
+      "Thirty years walking between worlds has taught me the value of honest dealing.",
+      "Each enchantment carries part of my essence. I price them to honor that sacrifice."
+    ]
+  },
+
+  "jeweler": {
+    refined: [
+      "Each piece represents generations of mastery. True artistry commands its proper worth.",
+      "I create heirlooms, not trinkets. The finest gems deserve the finest settings and prices.",
+      "Apprenticed under the royal jeweler. Excellence learned in palaces doesn't come cheaply.",
+      "My reputation precedes me, as do my standards. Quality gems, quality work, quality prices."
+    ],
+    humble: [
+      "Cut my first gem at twelve, lost my first fortune at twenty, learned humility by thirty.",
+      "Every stone has a soul. I just help them find their perfect setting and owner.",
+      "Been making engagement rings since before your parents met. Love shouldn't bankrupt anyone.",
+      "Started with nothing but steady hands and a good eye. Haven't forgotten my roots."
+    ],
+    standard: [
+      "Each piece carries a blessing from my homeland. Old traditions in new settings.",
+      "My great-uncle was a dragon's hoardmaster. Learned to spot quality from the best teacher.",
+      "Fair prices for beautiful work. Simple as that, complicated as everything else.",
+      "Gems are patient. They wait centuries for the right moment, the right person, the right price."
+    ]
+  },
+
+  "exotic goods": {
+    refined: [
+      "My collection represents the finest treasures from the most exclusive sources across all the lands.",
+      "Each item comes with provenance and guarantee. Authenticity and rarity command premium prices.",
+      "Decades of cultivating relationships with nobles, scholars, and merchant princes. Access costs.",
+      "These aren't mere curiosities. They're pieces of history, priced for the discerning collector."
+    ],
+    humble: [
+      "Lost my ship but kept my collection. Sometimes the best treasures wash up on unexpected shores.",
+      "Been places that don't exist on maps and brought back proof. Stories included at no extra charge.",
+      "Every item has a story. Some beautiful, some terrible, all true. Which calls to you?",
+      "Traded with pirates, thieves, and everyone in between. Good stuff doesn't always come from good places."
+    ],
+    standard: [
+      "Sailed seven seas, walked five continents, collected wonders you've only heard in tavern tales.",
+      "My caravan days ended when I found this place. Sometimes the greatest journey is staying still.",
+      "Each piece earned through adventure, negotiation, or lucky accident. The price reflects the journey.",
+      "Foreign lands, foreign customs, fair prices. That's been my motto for thirty trading years."
+    ]
+  }
+};
+
 const generateMotto = (shopTypeValue: string, priceModifier: number) => {
-  const choose = (arr: string | any[]) => arr[Math.floor(Math.random() * arr.length)];
-
-  if (shopTypeValue === 'Blacksmith/Weaponsmith' || shopTypeValue === 'Armorer') {
-    return choose(
-      priceModifier > 0
-        ? [
-            "Quality steel costs good coin. Cheap steel costs your life.",
-            "You want something that'll outlive you? Pay up.",
-            "I don’t sell scrap. I sell survival."
-          ]
-        : [
-            "The only thing sharper than my blades are my prices.",
-            "Steel for the people and the people's purse.",
-            "Crafted with care, priced to share."
-          ]
-    );
-  }
-
-  if (shopTypeValue === 'Magic Item Emporium' || shopTypeValue === 'Enchanter') {
-    return choose(
-      priceModifier > 0
-        ? [
-            "Arcane power has its price. Pay it wisely.",
-            "Wonders don't come cheap and neither do I.",
-            "Every enchantment has a cost. This one’s yours."
-          ]
-        : [
-            "Prices so low, you'll think it's illusion magic.",
-            "Wards, charms, and discounts await.",
-            "Mystic deals for mundane coin."
-          ]
-    );
-  }
-
-  if (shopTypeValue === 'Alchemist/Potion Shop') {
-    return choose([
-      "Bottled solutions for all your problems.",
-      "Take a sip, take a risk.",
-      "This is my family's potion shop.",
-      "I sell hope by the vial."
-    ]);
-  }
-
-  if (shopTypeValue === 'Adventuring Supplies') {
-    return choose([
-      "Equipping heroes. Burying fools who came unprepared.",
-      "You pack it, you live. You forget it, you die.",
-      "Gear up. The dungeon won’t wait.",
-      "Check your list twice — or buy a shovel."
-    ]);
-  }
-
-  if (shopTypeValue === 'General Store') {
-    return choose([
-      "If we don't have it, you probably don't need it.",
-      "A little bit of everything, a whole lot of value.",
-      "The shop that stocks what the others forgot.",
-      "Come for the basics, stay for the deals."
-    ]);
-  }
-
-  if (shopTypeValue === 'Jeweler') {
-    return choose([
-      "Treasures that outshine dragons' hoards.",
-      "Put a little gleam in your gamble.",
-      "When only gold speaks, I speak fluently.",
-      "Subtle flexes. Loud sparkle."
-    ]);
-  }
-
-  if (shopTypeValue === 'Exotic Goods') {
-    return choose([
-      "Curiosities from realms beyond your imagination.",
-      "One man’s trinket is another’s key to destiny.",
-      "You won't know you need it until it calls to you.",
-      "Everything here has a story. Most are cursed."
-    ]);
-  }
-
-  if (shopTypeValue === 'Bookstore & Scroll Shop') {
-    return choose([
-      "Knowledge is power. Power has a price.",
-      "Spells, stories, secrets — all for sale.",
-      "Ink-stained fingers, arcane minds.",
-      "Whispered wisdom, bound in vellum."
-    ]);
-  }
-
-  // Default catch-all
-  return choose([
-    "No refunds. No questions. Just gold.",
-    "Enter with coin, leave with treasure.",
-    "Quality goods for discerning adventurers.",
-    "The wise spend here before their quests.",
-    "Everything has a price. Even you."
-  ]);
+  const choose = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
+  const refinement = getShopRefinement(priceModifier);
+  const normalizedShopType = shopTypeValue.toLowerCase();
+  
+  // Get mottos based on shop type and refinement
+  const mottoOptions = shopkeeperMottos[normalizedShopType]?.[refinement] || 
+                      shopkeeperMottos["general store"][refinement];
+  
+  return choose(mottoOptions);
 };
 
 
@@ -824,163 +1465,6 @@ const generateShopkeeperMoney = (settlementSize) => {
   }
 };
   
-  // Better handle the personality descriptions
-  const replacePronouns = (
-  text: string,
-  pronoun: string,
-  possessive: string,
-  reflexive: string
-) => {
-  return text
-    .replace(/\bthey\b/gi, pronoun)
-    .replace(/\bthem\b/gi, pronoun === 'he' ? 'him' : 'her')
-    .replace(/\btheir\b/gi, possessive)
-    .replace(/\btheirs\b/gi, possessive + "'s")
-    .replace(/\bthemselves\b/gi, reflexive);
-};
-
-  const getPersonalityDesc = (
-  personality: string,
-  isFemale: boolean,
-  pronoun: string,
-  possessivePronoun: string,
-  reflexivePronoun: string
-) => {
-
-    switch (personality.toLowerCase()) {
-      case 'cheerful and talkative':
-        return isFemale ? 
-          `bright and chatty, always ready with a story` : 
-          `cheerful and talkative, never letting a customer shop in silence`;
-      case 'grumpy but fair':
-        return isFemale ? 
-          `perpetually grumpy but known for fair dealings` : 
-          `curmudgeonly but honest to a fault`;
-      case 'shrewd and calculating':
-        return `shrewd in business with an uncanny knack for calculation`;
-      case 'mysterious and cryptic':
-        return isFemale ? 
-          `shrouded in mystery, speaking in cryptic riddles` : 
-          `mysterious and tight-lipped about ${possessivePronoun} past`;
-      case 'enthusiastic about their wares':
-        return `passionate about ${possessivePronoun} merchandise, often demonstrating items with dramatic flair`;
-      case 'extremely suspicious of outsiders':
-        return `wary of strangers, eyeing new customers with visible suspicion`;
-      case 'absent-minded professor type':
-        return `brilliant but scattered, often forgetting what ${pronoun}'s saying mid-sentence`;
-      case 'boisterous and loud':
-        return `boisterous and loud enough to be heard from streets away`;
-      case 'soft-spoken and shy':
-        return `soft-spoken and reserved, barely audible when negotiating prices`;
-      case 'flirtatious with all customers':
-        return `flirtatious with every customer regardless of species or status`;
-      default:
-  return replacePronouns(personality.toLowerCase(), pronoun, possessivePronoun, reflexivePronoun);
-
-    }
-  };
-
-  // Better handle the appearance descriptions - fixing the "being" issue
-  const getAppearanceDesc = (
-    appearance: string,
-    pronoun: string,
-    possessivePronoun: string,
-    reflexivePronoun: string,
-    race: string
-  ) => {
-  if (appearance.startsWith('Has ')) {
-    return replacePronouns(
-      `someone with ${appearance.replace('Has ', '').toLowerCase()}`,
-      pronoun,
-      possessivePronoun,
-      reflexivePronoun
-    );
-  } else if (appearance.startsWith('Covered in ')) {
-    return replacePronouns(
-      appearance.toLowerCase(),
-      pronoun,
-      possessivePronoun,
-      reflexivePronoun
-    );
-  } else if (appearance.startsWith('Adorned with ')) {
-    return replacePronouns(
-      `decorated with ${appearance.replace('Adorned with ', '').toLowerCase()}`,
-      pronoun,
-      possessivePronoun,
-      reflexivePronoun
-    );
-  } else if (appearance.startsWith('Missing ')) {
-    return replacePronouns(
-      appearance.toLowerCase(),
-      pronoun,
-      possessivePronoun,
-      reflexivePronoun
-    );
-  } else if (appearance.includes('beard') || appearance.includes('hair')) {
-    return replacePronouns(
-      `sporting ${appearance.toLowerCase()}`,
-      pronoun,
-      possessivePronoun,
-      reflexivePronoun
-    );
-  } else if (appearance.startsWith('Always wearing ')) {
-    return replacePronouns(
-      `someone who always wears ${appearance.replace('Always wearing ', '').toLowerCase()}`,
-      pronoun,
-      possessivePronoun,
-      reflexivePronoun
-    );
-  } else if (appearance.startsWith('Unusually ')) {
-    return replacePronouns(
-      `${appearance.toLowerCase()} even by ${race.toLowerCase()} standards`,
-      pronoun,
-      possessivePronoun,
-      reflexivePronoun
-    );
-  } else if (appearance.startsWith('Immaculately ')) {
-    return replacePronouns(
-      appearance.toLowerCase(),
-      pronoun,
-      possessivePronoun,
-      reflexivePronoun
-    );
-  } else {
-    return replacePronouns(
-      appearance.toLowerCase(),
-      pronoun,
-      possessivePronoun,
-      reflexivePronoun
-    );
-  }
-};
-
-
-  // Better handle the quirk descriptions
-  const getQuirkDesc = (quirk: string, pronoun: string, possessivePronoun: string, reflexivePronoun: string) => {
-    if (quirk.includes('pet')) {
-      return `keeps a loyal pet that helps around the shop`;
-    } else if (quirk.includes('third person')) {
-      return `refers to ${reflexivePronoun} in the third person`;
-    } else if (quirk.includes('trinkets')) {
-      return `collects odd trinkets from customers`;
-    } else if (quirk.includes('metaphors')) {
-      return `uses unusual metaphors in conversation`;
-    } else if (quirk.includes('sings') || quirk.includes('hums')) {
-      return `constantly hums or sings while working`;
-    } else if (quirk.includes('history')) {
-      return `invents elaborate backstories for even the most mundane items`;
-    } else if (quirk.includes('imaginary')) {
-      return `converses with an imaginary assistant`;
-    } else if (quirk.includes('materials')) {
-      return `refuses to handle certain materials`;
-    } else if (quirk.includes('superstitious')) {
-      return `follows a complex set of superstitions`;
-    } else if (quirk.includes('shelves')) {
-      return `constantly reorganizes shelves`;
-    } else {
-      return quirk.toLowerCase();
-    }
-  };
 
 // Shared type for inventory items
 type ShopItem = {
@@ -1014,26 +1498,73 @@ const highlightPricing = (text: string) => {
   return highlightedText;
 };
 
-const getPricingDesc = (priceModifier: number, pronoun: string, possessivePronoun: string) => {
-  if (priceModifier > 0.15) {
-    return `charges a premium for ${possessivePronoun} wares; ${Math.abs(priceModifier * 100).toFixed(0)}% above market value, to be precise`;
-  } else if (priceModifier > 0) {
-    return `asks ${Math.abs(priceModifier * 100).toFixed(0)}% more than most merchants`;
-  } else if (priceModifier < -0.15) {
-    return `offers surprisingly good deals at ${Math.abs(priceModifier * 100).toFixed(0)}% below the usual rates`;
-  } else if (priceModifier < 0) {
-    return `keeps prices slightly lower than competitors—about ${Math.abs(priceModifier * 100).toFixed(0)}% below average`;
-  } else {
-    return `maintains fair, standard market prices`;
+// Helper function to replace refinement titles in shop names
+const replaceRefinementTitle = (shopName, shopType, newPriceModifier) => {
+  const newRefinement = getShopRefinement(newPriceModifier);
+  const newTitles = shopkeeperTitles[newRefinement][shopType] || shopkeeperTitles[newRefinement]['General Store'];
+  
+// Collect ALL possible titles from all refinement levels
+const allTitles: string[] = [];
+['refined', 'standard', 'humble'].forEach(refinementLevel => {
+  const titles = shopkeeperTitles[refinementLevel]?.[shopType] || shopkeeperTitles[refinementLevel]?.['General Store'];
+  if (titles && Array.isArray(titles)) {
+    allTitles.push(...titles);
   }
+});
+  
+  // Sort titles by length (longest first) to handle overlapping titles like "Grand Master" vs "Master"
+  allTitles.sort((a, b) => b.length - a.length);
+  
+  let updatedName = shopName;
+  let titleReplaced = false;
+  
+  // Remove the first title found (longest match first)
+  for (const oldTitle of allTitles) {
+    if (updatedName.includes(oldTitle)) {
+      // Remove the old title
+      updatedName = updatedName.replace(oldTitle, '').trim();
+      
+      // Clean up any double spaces
+      updatedName = updatedName.replace(/\s+/g, ' ');
+      
+      titleReplaced = true;
+      break; // Only replace ONE title to avoid cascading
+    }
+  }
+  
+  // If we replaced a title, add the new one in the same position
+  if (titleReplaced) {
+    const newTitle = newTitles[Math.floor(Math.random() * newTitles.length)];
+    
+    // Try to determine where to place the new title
+    // If the name starts with "The", place title after "The"
+    if (updatedName.startsWith('The ')) {
+      updatedName = `The ${newTitle} ${updatedName.substring(4)}`;
+    } else {
+      // Otherwise, place title at the beginning
+      updatedName = `${newTitle} ${updatedName}`;
+    }
+    
+    // Clean up any double spaces again
+    updatedName = updatedName.replace(/\s+/g, ' ').trim();
+  }
+  
+  return updatedName;
 };
 
-const getShopRefinement = (priceModifier: number): "refined" | "standard" | "humble" => {
-  if (priceModifier > 0.15) return "refined";
-  if (priceModifier < -0.15) return "humble";
-  return "standard";
+// Helper function to check if shop name contains refinement-specific elements
+const hasRefinementElements = (shopName, shopType) => {
+  const allTitles = [
+    ...(shopkeeperTitles.refined[shopType] || []),
+    ...(shopkeeperTitles.standard[shopType] || []),
+    ...(shopkeeperTitles.humble[shopType] || [])
+  ];
+  
+  return allTitles.some(title => shopName.includes(title));
 };
 
+// Pricing modifier dropdown logic
+const [selectedPricingStyle, setSelectedPricingStyle] = useState('random');
 
 // Get limits based on settlement size
 const getInventoryLimits = (sizeValue) => {
@@ -1303,7 +1834,7 @@ const itemCategories = {
   },
   
   'bags': {
-    icon: 'backpack',
+    icon: BackpackIcon,
     name: 'Bags',
     items: [
       'backpack', 'masterwork backpack', 'waterproof satchel', 'bag of holding (minor)', 'saddlebags', 'component pouch', 'pouch'
@@ -1319,7 +1850,7 @@ const itemCategories = {
   },
   
   'potions_alchemy': {
-    icon: 'experiment',
+    icon: FlaskIcon,
     name: 'Potions & Alchemy',
     items: [
       'potion of healing', 'greater healing potion', 'potion of superior healing',
@@ -1423,7 +1954,7 @@ const itemCategories = {
   },
   
   'mounts_animals': {
-    icon: 'house_siding',
+    icon: HorseIcon,
     name: 'Mounts & Animals',
     items: [
       'riding horse', 'warhorse', 'mule', 'exotic pets'
@@ -1487,7 +2018,22 @@ function getCategoryForItem(itemName) {
 
 // Helper function to get icon for item (shortcut)
 function getIconForItem(itemName) {
-  return getCategoryForItem(itemName).icon;
+  const categoryInfo = getCategoryForItem(itemName);
+  const icon = categoryInfo.icon;
+  
+  // If it's a string, it's a Material Symbol
+  if (typeof icon === 'string') {
+    return icon;
+  }
+  
+  // If it's a component, return 'phosphor' as a flag
+  return 'phosphor';
+}
+
+// Helper function to get the actual icon component
+function getIconComponent(itemName) {
+  const categoryInfo = getCategoryForItem(itemName);
+  return categoryInfo.icon;
 }
 
 // Helper function to get all items in a category
@@ -1508,20 +2054,63 @@ function getCategoryStats() {
   return stats;
 }
 
-const generateShopDescription = (shopType: string, settlementSize: string, rateModifier: number): string => {
-const refinement = getShopRefinement(rateModifier);
-  console.log('🔍 FUNCTION CALLED AT:', new Date().toISOString());
-  console.log('🔍 ORIGINAL PARAMETERS:', { shopType, settlementSize, rateModifier });
+// Helper function to close all dropdowns
+const closeAllDropdowns = () => {
+  setIsDropdownOpen(false);
+  setIsRaceDropdownOpen(false);
+  setIsSettlementDropdownOpen(false);
+  setIsShopTypeDropdownOpen(false);
+  setIsCategoryDropdownOpen(false);
+  setIsSortDropdownOpen(false);
+};
 
-    // Check if the parameters are being mutated somehow
-  const originalShopType = shopType;
-  setTimeout(() => {
-    console.log('🔍 PARAMETERS AFTER TIMEOUT:', { 
-      original: originalShopType, 
-      current: shopType,
-      stillEqual: originalShopType === shopType 
-    });
-  }, 0);
+// Get color classes based on rarity level
+const getRarityColors = (level) => {
+  switch (level.toLowerCase()) {
+    case 'common':
+      return {
+        text: 'text-stone-500',
+        textLight: 'text-stone-500', 
+        textIcon: 'text-stone-500',
+        background: 'bg-stone-50 border-stone-500 hover:bg-stone-100'
+      };
+    case 'uncommon':
+      return {
+        text: 'text-cyan-700',
+        textLight: 'text-cyan-700',
+        textIcon: 'text-cyan-700',
+        background: 'bg-teal-50 border-cyan-700 hover:bg-teal-100'
+      };
+    case 'rare':
+      return {
+        text: 'text-indigo-600',
+        textLight: 'text-indigo-600',
+        textIcon: 'text-indigo-600',
+        background: 'bg-violet-50 border-indigo-600 hover:bg-violet-100'
+      };
+    case 'very rare':
+      return {
+        text: 'text-rose-500',
+        textLight: 'text-rose-500',
+        textIcon: 'text-rose-500',
+        background: 'bg-pink-50 border-rose-500 hover:bg-pink-100'
+      };
+    case 'legendary':
+      return {
+        text: 'text-yellow-600',
+        textLight: 'text-yellow-600',
+        textIcon: 'text-yellow-600',
+        background: 'bg-amber-50 border-yellow-600 hover:bg-amber-100'
+      };
+    default:
+      return {
+        text: 'text-stone-500',
+        textLight: 'text-stone-500',
+        textIcon: 'text-stone-500',
+        background: 'bg-stone-50 border-stone-500 hover:bg-stone-100'
+      };
+  }
+};
 
 const setting = {
   city: [
@@ -1551,6 +2140,23 @@ const setting = {
     "located at the village's heart, where chickens peck freely in the dusty yard"
   ]
 };
+
+const generateShopDescription = (shopType: string, settlementSize: string, rateModifier: number, existingParts?: {location?: string, interior?: string, texture?: string}) => {
+  const refinement = getShopRefinement(rateModifier);
+  console.log('🔍 FUNCTION CALLED AT:', new Date().toISOString());
+  console.log('🔍 ORIGINAL PARAMETERS:', { shopType, settlementSize, rateModifier });
+
+  const originalShopType = shopType;
+  setTimeout(() => {
+    console.log('🔍 PARAMETERS AFTER TIMEOUT:', { 
+      original: originalShopType, 
+      current: shopType,
+      stillEqual: originalShopType === shopType 
+    });
+  }, 0);
+
+
+
 
 const texturalDetails = {
   "alchemist": {
@@ -1862,43 +2468,42 @@ const interiors = {
   }
 };
 
-const normalizeShopType = (type: string) => {
-  return type.toLowerCase(); 
+  const normalizeShopType = (type: string) => {
+    return type.toLowerCase(); 
+  };
+
+  const normalizedType = normalizeShopType(shopType);
+
+  // Generate or reuse location
+  const locationSettingArray = setting[settlementSize.toLowerCase()];
+  const chosenSetting = existingParts?.location || locationSettingArray[Math.floor(Math.random() * locationSettingArray.length)];
+
+  // Generate or reuse interior
+  const shopInteriorOptions = interiors[normalizedType]?.[refinement] || [];
+  const chosenInterior = existingParts?.interior || shopInteriorOptions[Math.floor(Math.random() * shopInteriorOptions.length)] || "an ordinary interior";
+
+  // Generate or reuse texture
+  const shopTextureOptions = texturalDetails[normalizedType]?.[refinement] || [];
+  const chosenTexture = existingParts?.texture || shopTextureOptions[Math.floor(Math.random() * shopTextureOptions.length)] || "";
+
+  const fullDescription = `This shop is ${chosenSetting}. Inside, you'll find ${chosenInterior}.${chosenTexture ? ` ${chosenTexture}.` : ''}`;
+
+  return {
+    fullDescription,
+    location: chosenSetting,
+    interior: chosenInterior,
+    texture: chosenTexture
+  };
 };
 
-const normalizedType = normalizeShopType(shopType);
-
-const locationSettingArray = setting[settlementSize.toLowerCase()];
-const chosenSetting = locationSettingArray[Math.floor(Math.random() * locationSettingArray.length)];
-
-const shopInteriorOptions = interiors[normalizedType]?.[refinement] || [];
-const chosenInterior = shopInteriorOptions[Math.floor(Math.random() * shopInteriorOptions.length)] || "an ordinary interior";
-
-const shopTextureOptions = texturalDetails[normalizedType]?.[refinement] || [];
-const chosenTexture = shopTextureOptions[Math.floor(Math.random() * shopTextureOptions.length)] || "";
-
-const base = `This shop is ${chosenSetting}. Inside, you'll find ${chosenInterior}.${chosenTexture ? ` ${chosenTexture}.` : ''}`;
-
-  // Debug logging
-  console.log('=== SHOP DESCRIPTION DEBUG ===');
-  console.log('shopType parameter:', shopType);
-  console.log('shopType.toLowerCase():', shopType.toLowerCase());
-  console.log('settlementSize:', settlementSize);
-  console.log('refinement:', refinement);
-  console.log('================================');
-  console.log('normalizedType:', normalizedType);
-
-  return base.charAt(0).toUpperCase() + base.slice(1);
-
-
-};
 
 
 // Function to generate random shopkeeper
 const generateShopkeeper = (
   
   customShopType: string = shopType,
-  customSettlementSize: string = settlementSize
+  customSettlementSize: string = settlementSize,
+  pricingStylePreference: string = selectedPricingStyle
  
 ) => {
   const fallbackShopType =
@@ -1927,35 +2532,61 @@ const generateShopkeeper = (
     );
 
     const newMotto = generateMotto(fallbackShopType, shopkeeper.priceModifier);
+    
+    // Generate new shop description
+    const shopDescriptionData = generateShopDescription(
+      fallbackShopType, 
+      customSettlementSize, 
+      shopkeeper.priceModifier,
+      {
+        location: shopkeeper.shopDescriptionParts?.location,
+        interior: shopkeeper.shopDescriptionParts?.interior,
+        texture: shopkeeper.shopDescriptionParts?.texture
+      }
+    );
+
+    // FIX: Generate new description template for the new shop type, but use locked name/race
+    const descriptionData = generateShopkeeperDescriptionWithTemplate({
+      name: shopkeeper.name, // Use locked name
+      race: shopkeeper.race, // Use locked race
+      shopType: fallbackShopType // Use new shop type
+    }, shopkeeper.priceModifier);
 
     const updatedShopkeeper = {
       ...shopkeeper,
-      shopType: fallbackShopType, // allow type change
+      shopType: fallbackShopType,
       commonItems: selectedCommonItems,
       rareItems: selectedRareItems,
       motto: newMotto,
-       shopDescription: generateShopDescription(fallbackShopType, customSettlementSize, shopkeeper.priceModifier)
+      shopDescription: shopDescriptionData.fullDescription,
+      shopDescriptionParts: {
+        location: shopDescriptionData.location,
+        interior: shopDescriptionData.interior,
+        texture: shopDescriptionData.texture
+      },
+      // FIX: Use the new description and template for the new shop type
+      description: descriptionData.finalDescription,
+      descriptionTemplate: descriptionData.template
     };
 
     setShopkeeper(updatedShopkeeper);
-    setShopType(fallbackShopType); // sync UI
+    setShopType(fallbackShopType);
     return;
-  }
-
-
-  let name, race, personality, quirk, appearance;
-
-if (isLocked && lockedShopkeeperIdentity) {
-  ({ name, race, personality, quirk, appearance } = lockedShopkeeperIdentity);
-} else {
-  race = races[Math.floor(Math.random() * races.length)];
-  const firstName = firstNames[race][Math.floor(Math.random() * firstNames[race].length)];
-  const lastName = lastNames[race][Math.floor(Math.random() * lastNames[race].length)];
-  name = `${firstName} ${lastName}`;
-  personality = personalities[Math.floor(Math.random() * personalities.length)];
-  quirk = quirks[Math.floor(Math.random() * quirks.length)];
-  appearance = appearances[Math.floor(Math.random() * appearances.length)];
 }
+
+
+let name, race;
+
+  if (isLocked && lockedShopkeeperIdentity) {
+    // Use locked identity
+    ({ name, race } = lockedShopkeeperIdentity);
+  } else {
+    // Generate new identity
+    race = races[Math.floor(Math.random() * races.length)];
+    const firstName = firstNames[race][Math.floor(Math.random() * firstNames[race].length)];
+    const lastName = lastNames[race][Math.floor(Math.random() * lastNames[race].length)];
+    name = `${firstName} ${lastName}`;
+  }
 
 
   let shopTypeValue = customShopType;
@@ -1965,72 +2596,60 @@ if (isLocked && lockedShopkeeperIdentity) {
 
   setShopType(shopTypeValue);
 
-  const pricingStyleObj = pricingStyles[Math.floor(Math.random() * pricingStyles.length)];
+  let pricingStyleObj;
+  let actualStyleIndex;
+  if (pricingStylePreference === 'random') {
+    actualStyleIndex = Math.floor(Math.random() * pricingStyles.length);
+    pricingStyleObj = pricingStyles[actualStyleIndex];
+  } else {
+    actualStyleIndex = parseInt(pricingStylePreference);
+    pricingStyleObj = pricingStyles[actualStyleIndex];
+  }
   const pricingStyle = pricingStyleObj.style;
   const priceModifier = pricingStyleObj.modifier;
 
-  const shopAdjective = shopAdjectives[Math.floor(Math.random() * shopAdjectives.length)];
-  const shopTypeNouns = shopNouns[shopTypeValue];
-  const shopNoun = shopTypeNouns[Math.floor(Math.random() * shopTypeNouns.length)];
-  const shopName = `The ${shopAdjective} ${shopNoun}`;
+const shopName = generateShopName(shopTypeValue, name, race, customSettlementSize, priceModifier);
 
   const limits = getInventoryLimits(customSettlementSize);
   const selectedCommonItems = generateCommonItems(shopTypeValue, priceModifier, limits);
   const selectedRareItems = generateRareItems(shopTypeValue, priceModifier, limits);
 
-  const generateShopkeeperDescription = (shopkeeper: { name: any; race: any; shopName?: string; shopType?: any; personality: any; quirk: any; appearance: any; pricingStyle?: string; priceModifier: any; commonItems?: never[]; rareItems?: never[]; motto?: string; }) => {
-    const femaleNames = ['Eleanor', 'Sophia', 'Olivia', 'Elizabeth', 'Dagna', 'Helga', 'Brunhilda', 'Thyra', 'Arwen', 'Galadriel', 'Tauriel', 'Lúthien', 'Rosie', 'Daisy', 'Elanor', 'Poppy', 'Tilly', 'Nixie', 'Quilla', 'Shara', 'Kyra', 'Irena', 'Lyndis', 'Baggi', 'Usga', 'Yevelda', 'Orianna', 'Lilith', 'Naamah', 'Akta', 'Morvena', 'Shevarra', 'Surina', 'Farideh', 'Sora'];
-    const isFemale = femaleNames.includes(shopkeeper.name.split(' ')[0]);
-    const pronoun = isFemale ? 'she' : 'he';
-    const possessivePronoun = isFemale ? 'her' : 'his';
-    const reflexivePronoun = isFemale ? 'herself' : 'himself';
-    const raceArticle = shopkeeper.race.toLowerCase().match(/^[aeiou]/) ? 'an' : 'a';
 
-    const personalityDesc = getPersonalityDesc(shopkeeper.personality, isFemale, pronoun, possessivePronoun, reflexivePronoun);
-    const appearanceDesc = getAppearanceDesc(shopkeeper.appearance, pronoun, possessivePronoun, reflexivePronoun, shopkeeper.race);
-    const quirkDesc = getQuirkDesc(shopkeeper.quirk, pronoun, possessivePronoun, reflexivePronoun);
-    const pricingDesc = getPricingDesc(shopkeeper.priceModifier, pronoun, possessivePronoun);
 
-    const descriptionFormats = [
-      `${shopkeeper.name.split(' ')[0]} is ${raceArticle} ${shopkeeper.race.toLowerCase()} merchant who is ${personalityDesc}. ${pronoun.charAt(0).toUpperCase() + pronoun.slice(1)} is ${appearanceDesc}. ${pronoun.charAt(0).toUpperCase() + pronoun.slice(1)} ${quirkDesc} and ${pricingDesc}.`,
-      `${shopkeeper.name.split(' ')[0]} is ${raceArticle} ${shopkeeper.race.toLowerCase()} shopkeeper ${appearanceDesc}. ${pronoun.charAt(0).toUpperCase() + pronoun.slice(1)} is ${personalityDesc}. ${pronoun.charAt(0).toUpperCase() + pronoun.slice(1)} ${quirkDesc}. When it comes to business, ${pronoun} ${pricingDesc}.`,
-      `${shopkeeper.name} runs ${possessivePronoun} shop with a peculiar habit—${pronoun} ${quirkDesc}. This ${shopkeeper.race.toLowerCase()} merchant is ${personalityDesc}. Customers can't help but notice that ${pronoun} is ${appearanceDesc}, and ${pronoun} ${pricingDesc}.`,
-      `Known for ${pricingDesc}, ${shopkeeper.name.split(' ')[0]} is ${raceArticle} ${shopkeeper.race.toLowerCase()} who is ${personalityDesc}. ${pronoun.charAt(0).toUpperCase() + pronoun.slice(1)} ${quirkDesc}, adding to ${possessivePronoun} distinctive character. Regulars recognize ${shopkeeper.name.split(' ')[0]} as ${appearanceDesc}.`,
-      `${shopkeeper.name} is ${raceArticle} ${shopkeeper.race.toLowerCase()} who is ${personalityDesc}. ${pronoun.charAt(0).toUpperCase() + pronoun.slice(1)}'s ${appearanceDesc} and ${pronoun} ${quirkDesc}. In terms of pricing, ${pronoun} ${pricingDesc}.`
-    ];
-
-    return descriptionFormats[Math.floor(Math.random() * descriptionFormats.length)];
-  };
-
+// Shopkeeper motto
   const motto = generateMotto(shopTypeValue, priceModifier);
-  const shopDescription = generateShopDescription(shopTypeValue, customSettlementSize, priceModifier);
+  const shopDescriptionData = generateShopDescription(shopTypeValue, customSettlementSize, priceModifier);
+  
+  const descriptionData = generateShopkeeperDescriptionWithTemplate({
+  name,
+  race,
+  shopType: shopTypeValue
+}, priceModifier);
 
   const newShopkeeper = {
     name,
     race,
     shopName,
     shopType: shopTypeValue,
-    personality,
-    quirk,
-    appearance,
     pricingStyle,
     priceModifier,
     commonItems: selectedCommonItems,
     rareItems: selectedRareItems,
     motto,
-    shopDescription,
+    shopDescription: shopDescriptionData.fullDescription,
+      shopDescriptionParts: {
+        location: shopDescriptionData.location,
+        interior: shopDescriptionData.interior,
+        texture: shopDescriptionData.texture
+      },
     availableMoney: generateShopkeeperMoney(customSettlementSize),
-    description: generateShopkeeperDescription({
-      name,
-      race,
-      personality,
-      quirk,
-      appearance,
-      priceModifier
-    })
+    shopLocation: setting[customSettlementSize.toLowerCase()][Math.floor(Math.random() * setting[customSettlementSize.toLowerCase()].length)],
+    description: descriptionData.finalDescription,
+    descriptionTemplate: descriptionData.template
   };
 
   setShopkeeper(newShopkeeper);
+  setSelectedPricingStyle(actualStyleIndex.toString());
 };
 
   
@@ -2038,16 +2657,17 @@ if (isLocked && lockedShopkeeperIdentity) {
   const [lockedShopkeeperIdentity, setLockedShopkeeperIdentity] = useState(null);
   const [isLocked, setIsLocked] = useState(false);
   const toggleLock = () => {
-  if (isLocked) {
-    // Unlock: clear stored identity
-    setLockedShopkeeperIdentity(null);
-  } else if (shopkeeper) {
-    // Lock: store current identity
-    const { name, race, personality, quirk, appearance } = shopkeeper;
-    setLockedShopkeeperIdentity({ name, race, personality, quirk, appearance });
-  }
-  setIsLocked(!isLocked);
-};
+    if (isLocked) {
+      // Unlock: clear stored identity
+      setLockedShopkeeperIdentity(null);
+      setIsLocked(false);
+    } else if (shopkeeper) {
+      // Lock: store current identity (name and race)
+      const { name, race } = shopkeeper;
+      setLockedShopkeeperIdentity({ name, race });
+      setIsLocked(true);
+    }
+  };
 
 <label className="flex items-center gap-2 text-sm text-stone-700">
   <input
@@ -2059,22 +2679,107 @@ if (isLocked && lockedShopkeeperIdentity) {
   Lock shopkeeper
 </label>
 
+// Function to regenerate name based on selected race
+const regenerateNameForRace = (selectedRace) => {
+  if (!shopkeeper || isLocked) return; // <-- Add lock check
+  
+  const firstName = firstNames[selectedRace][Math.floor(Math.random() * firstNames[selectedRace].length)];
+  const lastName = lastNames[selectedRace][Math.floor(Math.random() * lastNames[selectedRace].length)];
+  const newName = `${firstName} ${lastName}`;
+  const newFirstName = firstName;
+  const oldFirstName = shopkeeper.name.split(' ')[0];
+  
+  // Use existing template with new name and pronouns
+  const newDescription = applyNameAndPronouns(shopkeeper.descriptionTemplate, newName, selectedRace);
+  
+  // Update shop name by replacing the old name parts with new ones
+  let updatedShopName = shopkeeper.shopName;
+  
+  // Replace the old first name with the new first name
+  if (updatedShopName.includes(oldFirstName)) {
+    updatedShopName = updatedShopName.replace(oldFirstName, newFirstName);
+  }
+  
+  // Replace race-specific elements if they exist
+  const oldRaceStyles = raceNamingStyles[shopkeeper.race] || [];
+  const newRaceStyles = raceNamingStyles[selectedRace] || [];
+  
+  oldRaceStyles.forEach(oldStyle => {
+    if (updatedShopName.includes(oldStyle)) {
+      const newStyle = newRaceStyles[Math.floor(Math.random() * newRaceStyles.length)];
+      updatedShopName = updatedShopName.replace(oldStyle, newStyle);
+    }
+  });
+  
+  setShopkeeper({
+    ...shopkeeper,
+    name: newName,
+    race: selectedRace,
+    shopName: updatedShopName,
+    description: newDescription
+  });
+};
 
-  // Effect to generate new inventory on settlement selection
+// Effect to generate random shop on initial load
 useEffect(() => {
-  if (shopkeeper) {
+  const sizes = ['village', 'town', 'city'];
+  const randomSize = sizes[Math.floor(Math.random() * sizes.length)];
+  setSettlementSize(randomSize);
+  setSelectedPricingStyle('random')
+  generateShopkeeper('random', randomSize, 'random');
+}, []); // Empty dependency array means this runs once on mount
+
+// Effect to generate new inventory on settlement selection
+useEffect(() => {
+  if (shopkeeper && shopkeeper.shopDescriptionParts) {
     const limits = getInventoryLimits(settlementSize);
     const updatedCommon = generateCommonItems(shopkeeper.shopType, shopkeeper.priceModifier, limits);
     const updatedRare = generateRareItems(shopkeeper.shopType, shopkeeper.priceModifier, limits);
 
+    // Only update the location part, preserve interior and texture
+    const shopDescriptionData = generateShopDescription(
+      shopkeeper.shopType, 
+      settlementSize, 
+      shopkeeper.priceModifier,
+      {
+        interior: shopkeeper.shopDescriptionParts.interior,
+        texture: shopkeeper.shopDescriptionParts.texture
+        // Don't pass location, let it generate a new one for the new settlement
+      }
+    );
+
     setShopkeeper({
       ...shopkeeper,
       commonItems: updatedCommon,
-      rareItems: updatedRare
+      rareItems: updatedRare,
+      shopDescription: shopDescriptionData.fullDescription,
+      shopDescriptionParts: {
+        location: shopDescriptionData.location,
+        interior: shopkeeper.shopDescriptionParts.interior,
+        texture: shopkeeper.shopDescriptionParts.texture
+      }
     });
   }
 }, [settlementSize]);
 
+// Effect to close dropdowns when clicking outside
+useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (!event.target.closest('.dropdown-wrapper') && !event.target.closest('.relative')) {
+      setIsDropdownOpen(false);
+      setIsRaceDropdownOpen(false);
+      setIsSettlementDropdownOpen(false);
+      setIsShopTypeDropdownOpen(false);
+      setIsCategoryDropdownOpen(false);
+      setIsSortDropdownOpen(false);
+    }
+  };
+
+  document.addEventListener('mousedown', handleClickOutside);
+  return () => {
+    document.removeEventListener('mousedown', handleClickOutside);
+  };
+}, []);
 
   // Animation classes for regeneration
   const commonItemsClass = fadeCommon ? "opacity-0 transition-opacity duration-300" : "opacity-100 transition-opacity duration-300";
@@ -2093,26 +2798,29 @@ const getSettlementData = (size: string) => {
     case "village":
       return {
         text: "Village",
-        icon: "storefront"
+        iconType: "phosphor",
+        iconComponent: FarmIcon
       };
     case "town":
       return {
         text: "Town", 
-        icon: "store"
+        iconType: "phosphor",
+        iconComponent: HouseLineIcon
       };
     case "city":
       return {
         text: "City",
-        icon: "apartment"
+        iconType: "phosphor",
+        iconComponent: CastleTurretIcon
       };
     default:
       return {
         text: "Merchant",
-        icon: "storefront"
+        icon: "storefront",
+        iconType: "material"
       };
   }
 };
-
 
   const shopTypeClasses: { [key: string]: string } = {
   "Blacksmith/Weaponsmith": "bg-slate-100 text-slate-800 border-slate-300",
@@ -2134,6 +2842,9 @@ const getSettlementData = (size: string) => {
         {`
           @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap');
           @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,200,0,0&display=swap');
+          @plugin "flowbite/plugin";
+          @source "../node_modules/flowbite";
+
 
 
           .cinzel {
@@ -2157,7 +2868,93 @@ const getSettlementData = (size: string) => {
   font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 0, 'opsz' 24;
 }
 
+/* Uniform Dropdown Styling - Reusable */
+.uniform-dropdown {
+  background-color: #f5f5f4 !important;
+  border: 1px solid #a8a29e !important;
+  color: #78716c !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  font-family: 'Inter', sans-serif !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  padding: 0.4rem 28px 0.4rem 0.8rem !important;
+  border-radius: 0.375rem !important;
+  transition: all 0.2s ease !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  cursor: pointer !important;
+  position: relative !important;
+  width: auto !important;
+  min-width: fit-content !important;
+  white-space: nowrap !important; /* Prevent text wrapping */
+}
 
+.uniform-dropdown:hover {
+  background-color: #e7e5e4 !important;
+  border-color: #78716c !important;
+}
+
+.uniform-dropdown:focus {
+  outline: none !important;
+  border-color: #78716c !important;
+  box-shadow: 0 0 0 2px rgba(120, 113, 108, 0.1) !important;
+  background-color: #f5f5f4 !important;
+}
+
+.dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+  width: auto; /* Allow wrapper to size to content */
+}
+
+.dropdown-wrapper::after {
+  content: 'expand_more';
+  font-family: 'Material Symbols Outlined';
+  position: absolute;
+  top: 50%;
+  right: 6px; /* Reduced from 8px since we have less padding */
+  transform: translateY(-50%);
+  pointer-events: none;
+  font-size: 16px !important;
+  color: #78716c;
+  font-variation-settings: 
+    'FILL' 0,
+    'wght' 200,
+    'GRAD' 0,
+    'opsz' 20;
+}
+
+.dropdown-wrapper:hover::after {
+  color: #57534e;
+}
+
+/* Variant for rare items (purple theme) */
+.uniform-dropdown.rare-variant {
+  background-color: #f5f3ff !important;
+  border: 1px solid #c084fc !important;
+  color: #7c3aed !important;
+}
+
+.uniform-dropdown.rare-variant:hover {
+  background-color: #ede9fe !important;
+  border-color: #a855f7 !important;
+}
+
+.uniform-dropdown.rare-variant:focus {
+  border-color: #7c3aed !important;
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.1) !important;
+  background-color: #f5f3ff !important;
+}
+
+.dropdown-wrapper.rare-variant::after {
+  color: #7c3aed;
+}
+
+.dropdown-wrapper.rare-variant:hover::after {
+  color: #6d28d9;
+}
           .custom-purple {
             color: #5b5086;
           }
@@ -2189,7 +2986,7 @@ const getSettlementData = (size: string) => {
             vertical-align: middle;
             font-variation-settings: 
               'FILL' 0,
-              'wght' 400,
+              'wght' 200,
               'GRAD' 0,
               'opsz' 14 !important;
           }
@@ -2300,33 +3097,33 @@ const getSettlementData = (size: string) => {
           }
 
           .rarity-common {
-            background-color: #f5f5f4;
-            color: #78716c;
-            border-color: #a8a29e;
+            background-color: #F4F4F5;
+            color: #78716C;
+            border-color: #78716C;
           }
 
           .rarity-uncommon {
-            background-color: #ccfbf1;
-            color: #0d9488;
-            border-color: #2dd4bf;
+            background-color: #CCFBF1;
+            color: #0E7490;
+            border-color: #0E7490;
           }
 
           .rarity-rare {
-            background-color: #e0e7ff;
-            color: #4f46e5;
-            border-color: #6366f1;
+            background-color: #E0E7FF;
+            color: #4F46E5;
+            border-color: #4F46E5;
           }
 
           .rarity-very-rare {
-            background-color: #fce7f3;
-            color: #db2777;
-            border-color: #ec4899;
+            background-color: #FCE7F3;
+            color: #F43F5E;
+            border-color: #F43F5E;
           }
 
           .rarity-legendary {
-            background-color: #fffbeb;
-            color: #d97706;
-            border-color: #f59e0b;
+            background-color: #FEF3C7;
+            color: #D08700;
+            border-color: #D08700;
           }
           
           .currency-icon {
@@ -2402,79 +3199,7 @@ const getSettlementData = (size: string) => {
             background-color: #f5f5f4;
           }
           
-          .common-regen .material-symbols-outlined {
-            transition: transform 0.2s ease;
-          }
-         
-          .common-regen:hover {
-            background-color: #f5f5f4;
-          }
-          
-          .common-regen:hover .material-symbols-outlined {
-            transform: rotate(45deg);
-          }
-         
-          .rare-regen {
-            color: #7c3aed;
-            background-color: #f5f3ff;
-          }
-          
-          .rare-regen .material-symbols-outlined {
-            transition: transform 0.2s ease;
-          }
-         
-          .rare-regen:hover {
-            background-color: #f5f3ff;
-          }
-          
-          .rare-regen:hover .material-symbols-outlined {
-            transform: rotate(45deg);
-          }
-          
-select.rare-dropdown {
-  background-color: #f5f3ff !important;
-  border: 1px solid #c084fc !important;
-  color: #7c3aed !important;
-  transition: all 0.2s ease !important;
-  -webkit-appearance: none !important;
-  -moz-appearance: none !important;
-  appearance: none !important;
-}
-
-select.rare-dropdown:hover {
-  background-color: #ede9fe !important;
-  border-color: #a855f7 !important;
-}
-
-select.rare-dropdown:focus {
-  outline: none !important;
-  border-color: #7c3aed !important;
-  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.1) !important;
-  background-color: #f5f3ff !important;
-}
-
-select.common-dropdown {
-  background-color: #f5f5f4 !important;
-  border: 1px solid #a8a29e !important;
-  color: #78716c !important;
-  transition: all 0.2s ease !important;
-  -webkit-appearance: none !important;
-  -moz-appearance: none !important;
-  appearance: none !important;
-}
-
-select.common-dropdown:hover {
-  background-color: #e7e5e4 !important;
-  border-color: #78716c !important;
-}
-
-select.common-dropdown:focus {
-  outline: none !important;
-  border-color: #78716c !important;
-  box-shadow: 0 0 0 2px rgba(120, 113, 108, 0.1) !important;
-  background-color: #f5f5f4 !important;
-}
-
+       
 .dropdown-wrapper {
   position: relative;
   display: inline-block;
@@ -2489,12 +3214,14 @@ select.common-dropdown:focus {
   font-size: 16px !important;
 }
 
-.dropdown-arrow.common-arrow {
-  color: #78716c;
+.dropdown-menu {
+  white-space: nowrap !important;
+  min-width: max-content !important;
+  width: auto !important;
 }
 
-.dropdown-arrow.rare-arrow {
-  color: #7c3aed;
+.dropdown-menu li button {
+  white-space: nowrap !important;
 }
 
           .settlement-selector {
@@ -2590,100 +3317,47 @@ select.common-dropdown:focus {
       </style>
 
           
-{/* Store Selector Card */}
+{/*Title Card */}
 <div className="shopkeeper-card rounded-md shadow-sm p-6 mb-6">
-{/* Single header line with title, randomize button, and chevron */}
-<div className="flex items-center justify-between mb-4 header-mobile">
-  <h1 className="text-4xl font-bold text-stone-600 cinzel shopkeeper-name m-0 leading-none">Fantasy Shop Builder</h1>
+  {/* Header with title and randomize button */}
+<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4">
+  <h1 className="text-4xl font-bold text-stone-600 cinzel shopkeeper-name m-0 leading-none">
+    Fantasy Shop Builder
+  </h1>
   
-  <div className="flex items-center gap-4 header-controls-mobile">
-    {/* Randomize Button */}
-    <button
-      onClick={() => {
-        const sizes = ['village', 'town', 'city'];
-        const randomSize = sizes[Math.floor(Math.random() * sizes.length)];
-        setShopType('');
-        setSettlementSize(randomSize);
-        generateShopkeeper('random', randomSize);
-      }}
-      className="flex items-center gap-2 text-xs font-regular inter rounded-md border px-2 py-1 bg-stone-100 text-stone-500 border-stone-400 hover:bg-stone-200 transition"
-    >
-      <span className="material-symbols-outlined" style={{fontSize: '18px'}}>casino</span>
-      Randomize Shop
-    </button>
-    
-    {/* Chevron Toggle */}
-    <button
-      onClick={() => setControlsExpanded(!controlsExpanded)}
-      className="text-stone-500 hover:text-stone-700 p-2 rounded transition flex items-center justify-center"
-      title={controlsExpanded ? "Hide settings" : "Show settings"}
-    >
-      <span className="material-symbols-outlined" style={{fontSize: '28px'}}>
-        {controlsExpanded ? 'expand_less' : 'expand_more'}
-      </span>
-    </button>
-  </div>
+  {/* Randomize Button */}
+  <button
+    onClick={() => {
+      const sizes = ['village', 'town', 'city'];
+      const randomSize = sizes[Math.floor(Math.random() * sizes.length)];
+      setShopType('');
+      setSettlementSize(randomSize);
+      generateShopkeeper('random', randomSize, 'random'); // Pass 'random' directly
+    }}
+    className="flex items-center justify-center sm:justify-start gap-2 text-xs font-medium inter uppercase tracking-wider rounded-md border px-2 py-1 bg-stone-100 text-stone-500 border-stone-400 hover:bg-stone-200 transition self-start sm:self-auto"
+  >
+    <span className="material-symbols-outlined" style={{fontSize: '18px'}}>casino</span>
+    Randomize
+  </button>
 </div>
-
-  {/* Expandable Controls */}
-  {controlsExpanded && (
-    <div className="space-y-4 border-t border-stone-200 pt-4">
-      {/* Settlement Size */}
-      <div>
-        <span className="text-sm font-medium text-stone-600 mr-2">Where is the shop located?</span>
-        <div className="flex gap-2 mt-1">
-          {["village", "town", "city"].map((size) => (
-            <button
-              key={size}
-              onClick={() => setSettlementSize(size)}
-              className={`text-xs uppercase font-medium inter tracking-wider rounded-md border px-2 py-1 whitespace-nowrap ${
-                settlementSize === size
-                  ? "bg-stone-200 text-stone-500 border-stone-400"
-                  : "bg-stone-100 text-stone-500 border-stone-400 hover:bg-stone-200"
-              }`}
-            >
-              {size}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Shop Type */}
-      <div>
-        <span className="text-sm font-medium text-stone-600 mr-2">What kind of shop are your players visiting?</span>
-        <div className="flex flex-wrap gap-2 mt-1">
-          {shopTypes.map((type) => (
-            <button
-              key={type}
-              onClick={() => {
-                setShopType(type);
-                if (!settlementSize) {
-                  setSettlementSize('town');
-                  generateShopkeeper(type, 'town');
-                } else {
-                  generateShopkeeper(type, settlementSize);
-                }
-              }}
-              className={`text-xs uppercase font-medium inter tracking-wider rounded-md border px-2 py-1 whitespace-nowrap ${
-                shopType === type
-                  ? "bg-stone-200 text-stone-500 border-stone-400"
-                  : "bg-stone-100 text-stone-500 border-stone-400 hover:bg-stone-200"
-              }`}
-            >
-              {type}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  )}
+  
+  {/* Descriptive text in separate container */}
+ <div>
+  <p className="text-stone-500 inter text-sm">
+    Drop a ready-to-go shop into your game in seconds. Use the dropdowns to change the shop type or location. The inventory updates to match.
+    <br />
+    <br />
+    <span className="font-semibold">Coming soon:</span> Shop selling mechanics! Add your items, set quantities, and we'll do the math for you.
+  </p>
+</div>
 </div>
    
-      {shopkeeper && (
-        
-<div className="shopkeeper-card rounded-md shadow-sm p-6">
-  <div className="header-content mb-6">
-    
+{shopkeeper && (
+        <>
+          {/* Shopkeeper Information Card */}
+          <div className="shopkeeper-card rounded-md shadow-sm p-6 mb-6">
+            <div className="header-content mb-3">
+              
 {/* Shop Name */}
 <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-1">
   {/* Shop Name */}
@@ -2692,74 +3366,626 @@ select.common-dropdown:focus {
   </h2>
       
       
-{/* Badges - wrap on mobile */}
-  <div className="flex flex-wrap items-center gap-2">
-    {/* Shop Type Label */}
-    <div
-      className={`text-xs uppercase font-medium inter tracking-wider rounded-md border px-2 py-1 flex items-center ${shopTypeClasses[shopkeeper.shopType] || shopTypeClasses["default"]}`}
+{/* Dropdowns - wrap on mobile */}
+<div className="flex flex-wrap items-center gap-2">
+
+  {/* Shop Type Dropdown */}
+  <div className="relative inline-block">
+    <button
+      onClick={() => {
+        closeAllDropdowns();
+        setIsShopTypeDropdownOpen(!isShopTypeDropdownOpen);
+      }}
+      className="bg-stone-100 border border-stone-400 text-stone-600 text-xs 
+      font-medium inter uppercase tracking-wider rounded-md px-2 py-1 cursor-pointer 
+      hover:bg-stone-200 focus:outline-none focus:border-stone-600 focus:ring-2 focus:ring-stone-600/10 
+      flex items-center justify-between min-w-fit"
     >
-      <span className="material-symbols-outlined shop-icon mr-1">{shopIcons[shopkeeper.shopType] || "storefront"}</span>
-      {shopkeeper.shopType}
-    </div>
-    
-    {/* Settlement Badge */}
-{(() => { 
-  const settlementData = getSettlementData(settlementSize); 
-  return ( 
-    <div className={`text-xs uppercase font-medium inter tracking-wider rounded-md border px-2 py-1 flex items-center ${settlementBadgeClasses[settlementSize] || settlementBadgeClasses["default"]}`}> 
-      <span className="material-symbols-outlined shop-icon mr-1">{settlementData.icon}</span> 
-      {settlementData.text} 
-    </div> 
-  ); 
-})()}
+      <span className="flex items-center">
+        {(() => {
+          const icon = shopIcons[shopkeeper.shopType] || "storefront";
+          
+          if (typeof icon === 'string') {
+            return <span className="material-symbols-outlined shop-icon mr-1">{icon}</span>;
+          } else {
+            return <PhosphorIcon icon={icon} size={20} className="shop-icon mr-1" />;
+          }
+        })()}
+        {shopkeeper.shopType}
+      </span>
+      <span className="material-symbols-outlined ml-1 leading-none" style={{fontSize: '14px'}}>
+        {isShopTypeDropdownOpen ? 'expand_less' : 'expand_more'}
+      </span>
+    </button>
+   
+    {isShopTypeDropdownOpen && (
+      <div className="dropdown-menu absolute z-10 mt-1 bg-stone-50 border border-stone-300 rounded-lg shadow-lg">
+        <ul className="py-0.5 text-xs text-stone-700">
+          {shopTypes.map((type) => (
+            <li key={type}>
+              <button
+                onClick={() => {
+                  closeAllDropdowns();
+                  setShopType(type);
+                  generateShopkeeper(type, settlementSize, selectedPricingStyle);
+                  setIsShopTypeDropdownOpen(false);
+                }}
+                className={`block w-full text-left px-3 py-1.5 hover:bg-stone-100 text-stone-600 font-medium inter uppercase tracking-wider ${
+                  shopkeeper.shopType === type ? 'bg-stone-100' : ''
+                }`}
+              >
+                <span className="flex items-center">
+                  {(() => {
+                    const icon = shopIcons[type] || "storefront";
+                    
+                    if (typeof icon === 'string') {
+                      return <span className="material-symbols-outlined shop-icon text-stone-400 mr-1">{icon}</span>;
+                    } else {
+                      return <PhosphorIcon icon={icon} weight="regular" className="shop-icon text-stone-400 mr-1" />;
+                    }
+                  })()}
+                  {type}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
+    )}
+  </div>
+
+    <span className="text-stone-600 text-sm inter">
+    in a
+  </span>
+
+  {/* Settlement Dropdown */}
+  <div className="relative inline-block">
+    <button
+      onClick={() => {
+        closeAllDropdowns();
+        setIsSettlementDropdownOpen(!isSettlementDropdownOpen)}
+      }
+      className="bg-stone-100 border border-stone-400 text-stone-600 text-xs 
+      font-medium inter uppercase tracking-wider rounded-md px-2 py-1 cursor-pointer 
+      hover:bg-stone-200 focus:outline-none focus:border-stone-600 focus:ring-2 focus:ring-stone-600/10 
+      flex items-center justify-between min-w-fit"
+    >
+      <span className="flex items-center">
+        {(() => { 
+          const settlementData = getSettlementData(settlementSize);
+          if (settlementData.iconType === "phosphor") {
+            return <PhosphorIcon icon={settlementData.iconComponent} size={20} className="shop-icon mr-1" />;
+          } else {
+            return <span className="material-symbols-outlined shop-icon mr-1">{settlementData.icon}</span>;
+          }
+        })()}
+        {getSettlementData(settlementSize).text}
+      </span>
+      <span className="material-symbols-outlined ml-1 leading-none" style={{fontSize: '14px'}}>
+        {isSettlementDropdownOpen ? 'expand_less' : 'expand_more'}
+      </span>
+    </button>
+   
+    {isSettlementDropdownOpen && (
+      <div className="dropdown-menu absolute z-10 mt-1 bg-stone-50 border border-stone-300 rounded-lg shadow-lg">
+        <ul className="py-0.5 text-xs text-stone-700">
+          {["village", "town", "city"].map((size) => (
+            <li key={size}>
+              <button
+                onClick={() => {
+                  closeAllDropdowns();
+                  setSettlementSize(size);
+                  setIsSettlementDropdownOpen(false);
+                }}
+                className={`block w-full text-left px-3 py-1.5 hover:bg-stone-100 text-stone-600 font-medium inter uppercase tracking-wider ${
+                  settlementSize === size ? 'bg-stone-100' : ''
+                }`}
+              >
+                <span className="flex items-center">
+                  {(() => { 
+                    const settlementData = getSettlementData(size);
+                    if (settlementData.iconType === "phosphor") {
+                      return <PhosphorIcon icon={settlementData.iconComponent} weight="regular" className="shop-icon text-stone-400 mr-1" />;
+                    } else {
+                      return <span className="material-symbols-outlined shop-icon text-stone-400 mr-1">{settlementData.icon}</span>;
+                    }
+                  })()}
+                  {size}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+  </div>
+</div>
     </div>
 
     {shopkeeper?.shopDescription && (
-  <p className="text-stone-500 text-sm mt-1 mb-3">{shopkeeper.shopDescription}</p>
+  <p className="text-stone-600 inter text-sm mt-1 mb-6">{shopkeeper.shopDescription}</p>
 )}
 
 
 {/* Shopkeeper Name & Race */}
-<div className="flex items-center justify-between mb-2">
-  <h3 className="shopkeeper-name text-lg text-stone-600 font-semibold cinzel m-0">
-    {shopkeeper.name} <span className="text-stone-400 font-normal">• {shopkeeper.race}</span>
-  </h3>
-    <button
-      onClick={() => setIsLocked(!isLocked)}
-      aria-label="Toggle shopkeeper lock"
-      className="text-stone-500 hover:text-stone-700 transition-colors text-xs ml-2"
-    >
-      {isLocked ? (
-        <span className="material-symbols-outlined" title="Locked">lock</span>
-      ) : (
-        <span className="material-symbols-outlined" title="Unlocked">lock_open</span>
+<div className="flex items-start justify-between mb-1 gap-2">
+  <div className="flex items-center gap-2 flex-wrap min-w-0">
+    <h3 className="shopkeeper-name text-lg text-stone-600 font-semibold cinzel m-0 flex-shrink-0">
+      {shopkeeper.name}
+    </h3>
+    <span className="text-stone-400 font-normal flex-shrink-0">•</span>
+    <div className="relative inline-block flex-shrink-0">
+      <button
+  onClick={() => {
+    closeAllDropdowns();
+    setIsRaceDropdownOpen(!isRaceDropdownOpen)
+  }}
+  disabled={isLocked}
+  className={`bg-stone-100 border border-stone-400 text-stone-600 text-xs 
+  font-medium inter uppercase tracking-wider rounded-md px-3 py-1 cursor-pointer 
+  hover:bg-stone-200 focus:outline-none focus:border-stone-600 focus:ring-2 focus:ring-stone-600/10 
+  flex items-center justify-between min-w-fit ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+>
+      <span className="flex items-center">
+  <span className="material-symbols-outlined mr-1 leading-none">person_raised_hand</span>
+  {shopkeeper.race}
+</span>
+<span className="material-symbols-outlined ml-2 leading-none" style={{fontSize: '16px'}}>
+        {isRaceDropdownOpen ? 'expand_less' : 'expand_more'}
+      </span>
+    </button>
+    
+      {isRaceDropdownOpen && (
+        <div className="dropdown-menu absolute z-10 mt-1 bg-stone-50 border border-stone-300 rounded-lg shadow-lg">
+          <ul className="py-0.5 text-xs text-stone-700">
+            {races.map((race) => (
+              <li key={race}>
+                <button
+                  onClick={() => {
+                    closeAllDropdowns();
+                    regenerateNameForRace(race);
+                    setIsRaceDropdownOpen(false);
+                  }}
+                  className={`block w-full text-left px-3 py-1 hover:bg-stone-100 text-stone-600 font-medium inter uppercase tracking-wider ${
+                    shopkeeper.race === race ? 'bg-stone-100' : ''
+                  }`}
+                >
+                  <span className="flex items-center"><span className="material-symbols-outlined shop-icon text-stone-400 mr-1">person_raised_hand</span>{race}
+                  </span>
+                  
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
+    </div>
+  </div>
+<button
+  onClick={toggleLock}
+  aria-label="Toggle shopkeeper lock"
+  className="text-stone-500 hover:text-stone-700 transition-colors text-xs flex-shrink-0 self-center"
+>
+      {isLocked ? (
+  <PhosphorIcon icon={LockKeyIcon} size={20} weight="thin" title="Locked" />
+) : (
+  <PhosphorIcon icon={LockKeyOpenIcon} size={20} weight="thin" title="Unlocked" />
+)}
     </button>
 </div>
 
-              <div className="space-y-2">
-                {/* Shopkeeper Description */}
-                <div
-                  className="mt-2 text-sm text-gray-700"
-                  dangerouslySetInnerHTML={{ __html: shopkeeper?.description }}
-                ></div>
+<div className="space-y-2">
 
-                {/* Shop Motto */}
-                <p className="text-sm italic text-stone-600">
-                  — "{shopkeeper.motto}"
-                </p>
-              </div>
+ {/* Shop Motto */}
+  <p className="text-sm inter italic text-stone-400">
+   — "{shopkeeper.motto}"
+  </p>
+ </div>
+</div>
+
+
+{/* Shopkeeper Description */}
+ <div className="text-stone-600 inter text-sm mt-1">
+  <div className="mb-6">
+  {shopkeeper.description}
+</div>
+                  
+{/* Interactive pricing line */}
+
+  <div className="text-stone-600 inter text-sm leading-relaxed">
+  <span>{shopkeeper.name.split(' ')[0]} maintains </span>
+  <span className="relative inline-block">
+    <button
+  onClick={() => {
+    closeAllDropdowns();
+    setIsDropdownOpen(!isDropdownOpen)
+  }}
+  className="bg-stone-100 border border-stone-400 text-stone-600 text-xs 
+  font-medium inter uppercase tracking-wider rounded-md px-3 py-1 cursor-pointer 
+  hover:bg-stone-200 focus:outline-none focus:border-stone-600 focus:ring-2 focus:ring-stone-600/10 
+  inline-flex items-center justify-between min-w-fit align-middle"
+>
+      <span className="flex items-center">
+  <span className="material-symbols-outlined mr-1 leading-none">money_bag</span>
+  {getCurrentPricingText()}
+</span>
+<span className="material-symbols-outlined ml-2 leading-none" style={{fontSize: '16px'}}>
+        {isDropdownOpen ? 'expand_less' : 'expand_more'}
+      </span>
+    </button>
+   
+    {isDropdownOpen && (
+  <div className="dropdown-menu absolute z-10 mt-1 bg-stone-50 border border-stone-300 rounded-lg shadow-lg">
+    <ul className="py-0.5 text-xs text-stone-700">
+      {/* Market Rate button */}
+      <li>
+        <button
+          onClick={() => {
+            closeAllDropdowns();
+            setSelectedPricingStyle('random');
+            setIsDropdownOpen(false);
+  
+  const standardPricingStyle = pricingStyles.find(style => style.modifier === 0) || pricingStyles[0];
+  const newPriceModifier = standardPricingStyle.modifier; // This will be 0
+  
+  const limits = getInventoryLimits(settlementSize);
+  const updatedCommon = generateCommonItems(shopkeeper.shopType, newPriceModifier, limits);
+  const updatedRare = generateRareItems(shopkeeper.shopType, newPriceModifier, limits);
+  const descriptionData = regenerateDescriptionForPricing(newPriceModifier);
+  const shopDescriptionData = generateShopDescription(
+  shopkeeper.shopType, 
+  settlementSize, 
+  newPriceModifier,
+  {
+    location: shopkeeper.shopDescriptionParts.location
+    // Don't pass interior/texture - let them regenerate based on new price modifier
+  }
+);
+
+const newMotto = generateMotto(shopkeeper.shopType, newPriceModifier);
+
+let newShopName = shopkeeper.shopName;
+if (hasRefinementElements(shopkeeper.shopName, shopkeeper.shopType)) {
+  newShopName = replaceRefinementTitle(shopkeeper.shopName, shopkeeper.shopType, newPriceModifier);
+}
+  setShopkeeper({
+    ...shopkeeper,
+    shopName: newShopName,
+    priceModifier: newPriceModifier,
+    pricingStyle: standardPricingStyle.style,
+    commonItems: updatedCommon,
+    motto: newMotto,
+    rareItems: updatedRare,
+    shopDescription: shopDescriptionData.fullDescription,
+    shopDescriptionParts: {
+      location: shopDescriptionData.location,
+      interior: shopDescriptionData.interior,
+      texture: shopDescriptionData.texture
+    },
+    description: descriptionData.description,
+    descriptionTemplate: descriptionData.descriptionTemplate
+  });
+}}
+          className="block w-full text-left px-3 py-1 hover:bg-stone-100 text-stone-600 font-medium inter uppercase tracking-wider"
+        >
+       <span className="flex items-center">
+  <span className="material-symbols-outlined shop-icon text-stone-400 mr-1">money_bag</span>
+  Standard
+</span>
+        </button>
+      </li>
+      
+      {/* Each pricing option button (15% Above, 20% Below, etc.) */}
+      {pricingStyles
+        .filter(style => style.modifier !== 0)
+        .sort((a, b) => b.modifier - a.modifier)
+        .map((style, index) => {
+          const originalIndex = pricingStyles.findIndex(s => s === style);
+          const description = style.modifier > 0
+            ? `${Math.abs(style.modifier * 100).toFixed(0)}% Above`
+            : `${Math.abs(style.modifier * 100).toFixed(0)}% Below`;
+         
+          return (
+            <li key={originalIndex}>
+              <button
+                onClick={() => {
+                  closeAllDropdowns();
+                  setSelectedPricingStyle(originalIndex.toString());
+                  setIsDropdownOpen(false);
+  
+  const pricingStyleObj = pricingStyles[originalIndex];
+  const newPriceModifier = pricingStyleObj.modifier;
+  
+  const limits = getInventoryLimits(settlementSize);
+  const updatedCommon = generateCommonItems(shopkeeper.shopType, newPriceModifier, limits);
+  const updatedRare = generateRareItems(shopkeeper.shopType, newPriceModifier, limits);
+  const descriptionData = regenerateDescriptionForPricing(newPriceModifier);
+  
+  const shopDescriptionData = generateShopDescription(
+  shopkeeper.shopType, 
+  settlementSize, 
+  newPriceModifier,
+  {
+    location: shopkeeper.shopDescriptionParts.location
+    // Don't pass interior/texture - let them regenerate based on new price modifier
+  }
+);
+const newMotto = generateMotto(shopkeeper.shopType, newPriceModifier);
+
+let newShopName = shopkeeper.shopName;
+if (hasRefinementElements(shopkeeper.shopName, shopkeeper.shopType)) {
+  newShopName = replaceRefinementTitle(shopkeeper.shopName, shopkeeper.shopType, newPriceModifier);
+}
+
+  setShopkeeper({
+    ...shopkeeper,
+    shopName: newShopName,
+    priceModifier: newPriceModifier,
+    pricingStyle: pricingStyleObj.style,
+    commonItems: updatedCommon,
+    rareItems: updatedRare,
+    motto: newMotto,
+    shopDescription: shopDescriptionData.fullDescription,
+    shopDescriptionParts: {
+      location: shopDescriptionData.location,
+      interior: shopDescriptionData.interior,
+      texture: shopDescriptionData.texture
+    },
+    description: descriptionData.description,
+    descriptionTemplate: descriptionData.descriptionTemplate
+  });
+}}
+                className="block w-full text-left px-3 py-1.5 hover:bg-stone-100 text-stone-600 font-medium inter uppercase tracking-wider"
+              >
+                <span className="flex items-center">
+  <span className="material-symbols-outlined shop-icon text-stone-400 mr-1">money_bag</span>
+  {description}
+</span>
+              </button>
+            </li>
+          );
+        })}
+    </ul>
+  </div>
+)}
+  </span>
+   <span> market rate for {getShopkeeperPronouns(shopkeeper.name).possessive} wares.</span>
+  </div>
+</div>
           </div>
-          <div className="mb-6">
-            <p className="text-stone-700 inter mb-4 leading-relaxed border-t border-stone-200 pt-5 mt-2" 
-               dangerouslySetInnerHTML={{ __html: highlightPricing(shopkeeper.roleplayNote) }}>
-            </p>
+
+          {/* New Combined Inventory Section */}
+<div className="shopkeeper-card rounded-md shadow-sm p-6 mb-6">
+  <div className="flex items-center justify-between mb-4">
+    <div className="flex items-center gap-3">
+      <h3 className="text-lg font-semibold text-stone-600 cinzel shopkeeper-name m-0">
+        Shop Inventory
+      </h3>
+      <button
+        onClick={() => {
+          closeAllDropdowns();
+          regenerateCommonItems();
+          regenerateRareItems();
+        }}
+        className="text-stone-500 hover:text-stone-700 transition-colors"
+        title="Regenerate all inventory"
+      >
+        <span className="material-symbols-outlined" style={{fontSize: '20px'}}>refresh</span>
+      </button>
+    </div>
+    
+<div className="flex items-center gap-3">
+  <div className="flex items-center gap-2 text-sm text-stone-600">
+    <span>Show</span>
+    
+    {/* Category Dropdown */}
+    <div className="relative inline-block">
+      <button
+        onClick={() => {
+          closeAllDropdowns();
+          setIsCategoryDropdownOpen(!isCategoryDropdownOpen);
+        }}
+        className="bg-stone-100 border border-stone-400 text-stone-600 text-xs 
+        font-medium inter uppercase tracking-wider rounded-md px-3 py-1 cursor-pointer 
+        hover:bg-stone-200 focus:outline-none focus:border-stone-600 focus:ring-2 focus:ring-stone-600/10 
+        flex items-center justify-between min-w-fit"
+      >
+        <span className="flex items-center">
+          <span className="material-symbols-outlined mr-1 leading-none">all_inclusive</span>
+          {selectedCategory === 'any' ? 'Any Category' : (itemCategories[selectedCategory]?.name || selectedCategory)}
+        </span>
+        <span className="material-symbols-outlined ml-2 leading-none" style={{fontSize: '16px'}}>
+          {isCategoryDropdownOpen ? 'expand_less' : 'expand_more'}
+        </span>
+      </button>
+     
+      {isCategoryDropdownOpen && (
+        <div className="dropdown-menu absolute z-10 mt-1 bg-stone-50 border border-stone-300 rounded-lg shadow-lg">
+          <ul className="py-0.5 text-xs text-stone-700">
+            <li>
+              <button
+                onClick={() => {
+                  closeAllDropdowns();
+                  setSelectedCategory('any');
+                  setIsCategoryDropdownOpen(false);
+                }}
+                className={`block w-full text-left px-3 py-1.5 hover:bg-stone-100 text-stone-600 font-medium inter uppercase tracking-wider ${
+                  selectedCategory === 'any' ? 'bg-stone-100' : ''
+                }`}
+              >
+                <span className="flex items-center">
+                  <span className="material-symbols-outlined shop-icon text-stone-400 mr-1">all_inclusive</span>
+                  Any Category
+                </span>
+              </button>
+            </li>
+            {getAvailableCategories().map(category => {
+              const categoryData = itemCategories[category];
+              return (
+                <li key={category}>
+                  <button
+                    onClick={() => {
+                      closeAllDropdowns();
+                      setSelectedCategory(category);
+                      setIsCategoryDropdownOpen(false);
+                    }}
+                    className={`block w-full text-left px-3 py-1.5 hover:bg-stone-100 text-stone-600 font-medium inter uppercase tracking-wider ${
+                      selectedCategory === category ? 'bg-stone-100' : ''
+                    }`}
+                  >
+                    <span className="flex items-center">
+                      {(() => {
+                        const icon = categoryData?.icon;
+                        if (typeof icon === 'string') {
+                          return <span className="material-symbols-outlined shop-icon text-stone-400 mr-1">{icon}</span>;
+                        } else if (icon) {
+                          return <PhosphorIcon icon={icon} weight="regular" className="shop-icon text-stone-400 mr-1" />;
+                        } else {
+                          return <span className="material-symbols-outlined shop-icon text-stone-400 mr-1">help_outline</span>;
+                        }
+                      })()}
+                      {categoryData?.name || category}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </div>
+    
+    <span>sorted by</span>
+    
+    {/* Sort Dropdown */}
+    <div className="relative inline-block">
+      <button
+        onClick={() => {
+          closeAllDropdowns();
+          setIsSortDropdownOpen(!isSortDropdownOpen)
+        }}
+        className="bg-stone-100 border border-stone-400 text-stone-600 text-xs 
+        font-medium inter uppercase tracking-wider rounded-md px-3 py-1 cursor-pointer 
+        hover:bg-stone-200 focus:outline-none focus:border-stone-600 focus:ring-2 focus:ring-stone-600/10 
+        flex items-center justify-between min-w-fit"
+      >
+        <span className="flex items-center">
+          <span className="material-symbols-outlined mr-1 leading-none">sort</span>
+          {inventorySort === 'alpha' ? 'Alphabetical' : 
+           inventorySort === 'price-asc' ? 'Price: Low to High' : 
+           'Price: High to Low'}
+        </span>
+        <span className="material-symbols-outlined ml-2 leading-none" style={{fontSize: '16px'}}>
+          {isSortDropdownOpen ? 'expand_less' : 'expand_more'}
+        </span>
+      </button>
+     
+      {isSortDropdownOpen && (
+        <div className="dropdown-menu absolute z-10 mt-1 bg-stone-50 border border-stone-300 rounded-lg shadow-lg">
+          <ul className="py-0.5 text-xs text-stone-700">
+            {[
+              { value: 'alpha', label: 'Alphabetical', icon: 'sort_by_alpha' },
+              { value: 'price-asc', label: 'Price: Low to High', icon: 'trending_up' },
+              { value: 'price-desc', label: 'Price: High to Low', icon: 'trending_down' }
+            ].map((option) => (
+              <li key={option.value}>
+                <button
+                  onClick={() => {
+                    closeAllDropdowns();
+                    setInventorySort(option.value);
+                    setIsSortDropdownOpen(false);
+                  }}
+                  className={`block w-full text-left px-3 py-1.5 hover:bg-stone-100 text-stone-600 font-medium inter uppercase tracking-wider ${
+                    inventorySort === option.value ? 'bg-stone-100' : ''
+                  }`}
+                >
+                  <span className="flex items-center">
+                    <span className="material-symbols-outlined shop-icon text-stone-400 mr-1">{option.icon}</span>
+                    {option.label}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  </div>
+</div>
+  </div>
+  
+  <div className="space-y-3">
+    {getCombinedInventory().map((item, index) => (
+      <div 
+        key={`${item.type}-${index}-${item.name}`} 
+        className={`${getRarityColors(item.level).background} border rounded-lg p-4 transition-colors`}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3 flex-1">
+            {/* Item Icon */}
+            <div className="flex-shrink-0 mt-1">
+              {(() => {
+                const iconValue = getIconForItem(item.name);
+                const IconComponent = getIconComponent(item.name);
+                const colors = getRarityColors(item.level);
+                
+                if (iconValue === 'phosphor') {
+                  return <PhosphorIcon icon={IconComponent} size={24} className={colors.textIcon} />;
+                } else {
+                  return (
+                    <span className={`material-symbols-outlined ${colors.textIcon}`} style={{fontSize: '24px'}}>
+                      {iconValue}
+                    </span>
+                  );
+                }
+              })()}
+            </div>
+            
+            {/* Item Info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <h4 className={`font-medium ${getRarityColors(item.level).text} m-0`}>
+                  {item.name}
+                </h4>
+                <span className={getRarityBadgeClass(item.level)}>
+                  {item.level}
+                </span>
+              </div>
+              
+              {item.details && (
+                <p className={`text-sm ${getRarityColors(item.level).textLight} m-0 leading-relaxed`}>
+                  {item.details}
+                </p>
+              )}
+            </div>
           </div>
           
+          {/* Price */}
+          <div className="text-right">
+            <div className={`font-medium ${getRarityColors(item.level).text}`}
+                dangerouslySetInnerHTML={{ __html: item.adjustedPrice }}>
+            </div>
+            {shopkeeper.priceModifier !== 0 && (
+              <div className={`text-xs opacity-70 mt-1 ${getRarityColors(item.level).textIcon}`}>
+                Original: {item.basePrice}
+              </div>
+            )}
+          </div>
+          </div>
+        </div>
+    ))}
+    
+    {getCombinedInventory().length === 0 && (
+      <div className="text-center py-8 text-stone-500">
+        <span className="material-symbols-outlined mb-2 block" style={{fontSize: '48px'}}>inventory_2</span>
+        <p>No items match the selected category.</p>
+      </div>
+    )}
+  </div>
+</div>
 
           {/* Shop Till Card */}
-          <div className="till-card rounded-md p-4 mb-6">
+          <div className="shopkeeper-card rounded-md shadow-sm p-6 mb-6">
             <div className="flex items-center justify-between">
               <div className="till-display">
                 <div className="flex items-center gap-2 mb-1">
@@ -2779,222 +4005,10 @@ select.common-dropdown:focus {
               </div>
             </div>
           </div>
+        </>
+      )}
+                </div>
 
-          {/* Inventory */}
-          <div className="mb-6">            
-            <div className="grid grid-cols-1 gap-6"></div>
-       
-            <div className="grid grid-cols-1 gap-6">
-              <div className="common-items-block p-5 rounded-md">
-                <div className="section-header">
-  {/* Group header + regen button together */}
-  <div className="flex items-center gap-2">
-    <h4 className="text-xs tracking-widest uppercase font-semibold inter" style={{ color: "#78716c" }}>
-      Common Items
-    </h4>
-    <button
-      onClick={regenerateCommonItems}
-      className="regen-button common-regen"
-      title="Regenerate common items"
-    >
-      <span className="material-symbols-outlined shop-icon">cycle</span>
-    </button>
-  </div>
-  
-  {/* Dropdown stays on the right */}
-  <div className="flex items-center gap-2">
-  <span className="text-xs text-stone-500">Sort:</span>
-  <div className="dropdown-wrapper">
-    <select
-      className="text-xs font-normal inter border rounded px-2 py-1 text-stone-600 common-dropdown"
-      value={commonSort}
-      onChange={(e) => setCommonSort(e.target.value)}
-    >
-      <option value="alpha">Alphabetical</option>
-      <option value="price-asc">Price: low to high</option>
-      <option value="price-desc">Price: high to low</option>
-    </select>
-    <span className="material-symbols-outlined dropdown-arrow common-arrow">expand_more</span>
-  </div>
-</div>
-</div>
-                <div className={commonItemsClass}>
-                  {sortedCommon.length > 0 ? (
-  sortedCommon.map((item, index) => (
-    <div key={`common-${index}-${item.name}`} className="item-row item-row-mobile">
-  <div className="flex flex-col flex-1 item-content-mobile">
-    <div className="flex items-center gap-2 mb-1 flex-wrap">
-      <span className="material-symbols-outlined text-stone-500">
-        {getIconForItem(item.name)}
-      </span>
-      <span className="text-stone-600">
-        {item.name}
-      </span>
-      <span className={getRarityBadgeClass(item.level)}>
-        {item.level}
-      </span>
-    </div>
-    
-    {/* Price on mobile - left aligned, underneath name */}
-    <div className="block sm:hidden mb-2">
-      <div className="font-medium text-stone-600" 
-           dangerouslySetInnerHTML={{ __html: item.adjustedPrice }}>
-      </div>
-      {shopkeeper.priceModifier !== 0 && (
-        <div className="base-price">
-          Original: {item.basePrice}
-        </div>
-      )}
-    </div>
-    
-    {/* Description - full width on mobile */}
-    {item.details && (
-      <span className="text-stone-500 text-sm mt-1 mb-1 ml-0 sm:ml-7">
-        {item.details}
-      </span>
-    )}
-  </div>
-  
-  {/* Price on desktop ONLY - conditional rendering */}
-  <div className="hidden sm:block ml-4">
-    <div className="price-block">
-      <div className="price-display font-medium text-stone-600" 
-           dangerouslySetInnerHTML={{ __html: item.adjustedPrice }}>
-      </div>
-      {shopkeeper.priceModifier !== 0 && (
-        <div className="base-price">
-          Original: {item.basePrice}
-        </div>
-      )}
-    </div>
-  </div>
-</div>
-                    ))
-                  ) : (
-                    <div className="empty-inventory">
-                      This small establishment has no common items in stock.
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <div className="rare-items-block p-5 rounded-md">
-                <div className="section-header">
-  {/* Group header + regen button together */}
-  <div className="flex items-center gap-2">
-    <h4 className="text-xs tracking-widest uppercase font-semibold inter" style={{ color: "#7c3aed" }}>
-      Rare Items
-    </h4>
-    <button
-      onClick={regenerateRareItems}
-      className="regen-button rare-regen"
-      title="Regenerate rare items"
-      disabled={settlementSize === 'village'}
-    >
-      <span className="material-symbols-outlined shop-icon">cycle</span>
-    </button>
-  </div>
-  
-  {/* Dropdown stays on the right */}
-<div className="flex items-center gap-2">
-  <span className="text-xs text-violet-500">Sort:</span>
-  <div className="dropdown-wrapper">
-    <select
-      className="text-xs font-normal inter border rounded px-2 py-1 text-violet-600 rare-dropdown"
-      value={rareSort}
-      onChange={(e) => setRareSort(e.target.value)}
-    >
-      <option value="alpha">Alphabetical</option>
-      <option value="price-asc">Price: low to high</option>
-      <option value="price-desc">Price: high to low</option>
-    </select>
-    <span className="material-symbols-outlined dropdown-arrow rare-arrow">expand_more</span>
-  </div>
-</div>
-</div>
-                <div className={rareItemsClass}>
-                  {sortedRare.length > 0 ? (
-  sortedRare.map((item, index) => (
-    <div key={`rare-${index}-${item.name}`} className="rare-item-row item-row-mobile">
-  <div className="flex flex-col flex-1 item-content-mobile">
-    <div className="flex items-center gap-2 mb-1 flex-wrap">
-      <span className="material-symbols-outlined text-violet-500">
-        {getIconForItem(item.name)}
-      </span>
-      <span className="text-violet-700">
-        {item.name}
-      </span>
-      <span className={getRarityBadgeClass(item.level)}>
-        {item.level}
-      </span>
-    </div>
-    
-    {/* Price on mobile - left aligned, underneath name */}
-    <div className="block sm:hidden mb-2">
-      <div className="font-medium text-violet-700" 
-           dangerouslySetInnerHTML={{ __html: item.adjustedPrice }}>
-      </div>
-      {shopkeeper.priceModifier !== 0 && (
-        <div className="base-price !text-violet-500">
-          Original: {item.basePrice}
-        </div>
-      )}
-    </div>
-    
-    {/* Description - full width on mobile */}
-    {item.details && (
-      <span className="text-violet-500 text-sm mt-1 mb-1 ml-0 sm:ml-7">
-        {item.details}
-      </span>
-    )}
-  </div>
-  
-  {/* Price on desktop ONLY - conditional rendering */}
-  <div className="hidden sm:block ml-4">
-    <div className="price-block">
-      <div className="price-display font-medium text-violet-700" 
-           dangerouslySetInnerHTML={{ __html: item.adjustedPrice }}>
-      </div>
-      {shopkeeper.priceModifier !== 0 && (
-        <div className="base-price !text-violet-500">
-          Original: {item.basePrice}
-        </div>
-      )}
-    </div>
-  </div>
-</div>
-                    ))
-                  ) : (
-                    <div className="empty-inventory">
-    {settlementSize === 'village' 
-      ? "This small village shop doesn't stock any rare or magical items." 
-      : "No rare items are currently in stock."}
-  </div>
-)}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       )}
       
-      {!shopkeeper && (
-        <div className="shopkeeper-card rounded-md shadow-sm p-6 text-left">
-          <h2 className="text-2xl font-bold text-stone-600 cinzel m-0leading-none">Welcome, Game Master.</h2>
-<p className="text-stone-600 text-sm font inter leading-relaxed mb-4">
-  Whether you're prepping five minutes before the session or improvising after your bard seduced the town treasurer, this 
-    <span className="font-semibold"> Fantasy Shop Generator</span> has your back. Built with <span className="italic">Dungeons & Dragons 5e</span> in mind, it conjures a ready-to-use shopkeeper, inventory, and store concept in seconds.
-</p>
-<ul className="list-disc list-inside text-sm font inter text-stone-600 space-y-1 mb-6">
-  <li><span className="font-semibold">🎲 Randomize:</span> Click the dice to summon an entirely new shop with randomized details.</li>
-  <li><span className="font-semibold">🏷️ Shop Type:</span> Lock in the kind of store you want: alchemist, jeweler, scroll shop, and more.</li>
-  <li><span className="font-semibold">🏘️ Settlement Size:</span> Choose between village, town, or city which affects inventory depth and rarity.</li>
-  <li><span className="font-semibold">🔒 Lock Shopkeeper:</span> Found someone you like? Lock their identity and change the shop around them.</li>
-</ul>
-        </div>
-      )}
-    </div>
-  );
-}
-
 export default ShopkeeperGenerator;

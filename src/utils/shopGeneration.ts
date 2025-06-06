@@ -21,7 +21,7 @@ import {
   shopAdjectives,
   shopNouns,
   namingPatterns,
-} from "../data/shopNaming";
+} from "../data/ShopNaming";
 import { shopTypes, pricingStyles, rarityRank } from "../data/constants";
 
 // Import utility dependencies

@@ -145,7 +145,7 @@ function ShopkeeperGenerator() {
   const [playerCharisma, setPlayerCharisma] = useState(0);
   const [haggleAttempts, setHaggleAttempts] = useState(3);
   const [currentHaggleDC, setCurrentHaggleDC] = useState(10);
-  const [shopkeeperMood, setShopkeeperMood] = useState("neutral");
+  const [shopkeeperMood, setShopkeeperMood] = useState("reserved");
   const [lastHaggleResult, setLastHaggleResult] = useState(null);
   const [recentSales, setRecentSales] = useState([]);
   const [isHaggling, setIsHaggling] = useState(false);
@@ -153,7 +153,7 @@ function ShopkeeperGenerator() {
   const [isCurrentHaggleQuote, setCurrentHaggleQuote] = useState(false);
   const [isCharismaDropdownOpen, setIsCharismaDropdownOpen] = useState(false);
   const [hasTriedCharismaCheck, setHasTriedCharismaCheck] = useState(false);
-  const [relationshipStatus, setRelationshipStatus] = useState("neutral"); // "trusted", "neutral", "annoyed", "offended"
+  const [relationshipStatus, setRelationshipStatus] = useState("reserved"); // "trusted", "neutral", "annoyed", "offended"
   const [critFailCount, setCritFailCount] = useState(0); // Track escalating penalties
   const [isLockedOut, setIsLockedOut] = useState(false);
   const [apologyFee, setApologyFee] = useState(0);

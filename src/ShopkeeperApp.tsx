@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import "./styles/ShopkeeperApp.css";
-import SellingSection from "./components/SellingSection";
-import ShopkeeperCard from "./components/ShopkeeperCard";
-import InventorySection from "./components/InventorySection";
-import TitleCard from "./components/TitleCard";
+import SellingSection from "./components/sellingSection";
+import ShopkeeperCard from "./components/shopkeeperCard";
+import InventorySection from "./components/inventorySection";
+import TitleCard from "./components/titleCard";
 import { useShopkeeper } from "./hooks/useShopkeeper";
 import {
   femaleNames,

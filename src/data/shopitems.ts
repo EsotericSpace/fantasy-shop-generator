@@ -1,4 +1,4 @@
-// data/shopitems.ts
+// data/shopItems.ts
 
 export const shopItems = {
   Alchemist: [

@@ -1227,7 +1227,7 @@ setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
           />
 
 {/* Tab Navigation */}
-<div className="shopkeeper-card rounded-t-md border-b border-stone-300 shadow-md pt-6 px-6 !pb-0 mb-6 mb-0 bg-stone-100 dark:bg-gray-700 overflow-hidden">
+<div className="shopkeeper-card rounded-t-md border-b border-stone-300 shadow-md pt-6 px-6 !pb-0 mb-0 bg-stone-100 dark:bg-gray-700 overflow-hidden">
   <div className="flex gap-4">
     <button
   onClick={() => setActiveTab('inventory')}

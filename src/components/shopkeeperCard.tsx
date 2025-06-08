@@ -1,10 +1,19 @@
 // components/ShopkeeperCard.tsx
 import React from "react";
+import { buttonStyles } from "../styles/buttonStyles";
 import { shopTypes, pricingStyles, shopIcons } from "../data/constants";
 import { races } from "../data/names";
 import { getShopkeeperPronouns } from "../utils/shopGeneration";
 import { getSettlementData } from "../utils/helpers";
 import { LockKeyIcon, LockKeyOpenIcon } from "@phosphor-icons/react";
+import { 
+  getInventoryLimits,
+  generateCommonItems,
+  generateRareItems
+} from "../utils/shopGeneration";
+import { normalizeShopType } from "../data/shopItems";
+import { adjustPrice } from "../utils/pricing";
+
 
 const PhosphorIcon = ({ icon: Icon, weight = "thin", size = 20, ...props }) => (
   <Icon weight={weight} size={size} {...props} />
@@ -77,6 +86,29 @@ const ShopkeeperCard: React.FC<ShopkeeperCardProps> = ({
 }) => {
   if (!shopkeeper) return null;
 
+if (!shopkeeper) return null;
+
+
+ // Function to regenerate inventory with new price modifier
+  const regenerateInventoryWithNewPricing = (newPriceModifier: number) => {
+    const limits = getInventoryLimits(settlementSize);
+    const normalizedShopType = normalizeShopType(shopkeeper.shopType);
+    
+    const newCommonItems = generateCommonItems(
+      normalizedShopType,
+      newPriceModifier,
+      limits
+    );
+
+    const newRareItems = generateRareItems(
+      normalizedShopType,
+      newPriceModifier,
+      limits
+    );
+
+    return { newCommonItems, newRareItems };
+  };
+
   return (
     <div className="shopkeeper-card rounded-md shadow-md p-6 mb-6 bg-stone-100 dark:bg-gray-700">
       <div className="header-content mb-3">
@@ -96,10 +128,7 @@ const ShopkeeperCard: React.FC<ShopkeeperCardProps> = ({
                   closeAllDropdowns();
                   setIsShopTypeDropdownOpen(!isShopTypeDropdownOpen);
                 }}
-                className="bg-stone-100 dark:bg-gray-700 border border-stone-400 dark:border-gray-600 text-stone-600 dark:text-gray-300 text-xs 
-        font-medium inter uppercase tracking-wider rounded-md px-3 py-1 cursor-pointer 
-        hover:bg-stone-200 dark:hover:bg-gray-600 focus:outline-none focus:border-stone-600 dark:focus:border-gray-600 focus:ring-2 focus:ring-stone-600/10 dark:focus:ring-stone-400/10 
-        inline-flex items-center justify-between min-w-fit align-middle"
+                className={buttonStyles.dropdown}
               >
                 <span className="flex items-center">
                   {(() => {
@@ -192,10 +221,7 @@ const ShopkeeperCard: React.FC<ShopkeeperCardProps> = ({
                   closeAllDropdowns();
                   setIsSettlementDropdownOpen(!isSettlementDropdownOpen);
                 }}
-                className="bg-stone-100 dark:bg-gray-700 border border-stone-400 dark:border-gray-600 text-stone-600 dark:text-gray-300 text-xs 
-    font-medium inter uppercase tracking-wider rounded-md px-3 py-1 cursor-pointer 
-    hover:bg-stone-200 dark:hover:bg-gray-600 focus:outline-none focus:border-stone-600 dark:focus:border-stone-400 focus:ring-2 focus:ring-stone-600/10 dark:focus:ring-stone-400/10 
-    inline-flex items-center justify-between min-w-fit align-middle"
+                className={buttonStyles.dropdown}
               >
                 <span className="flex items-center">
                   {(() => {
@@ -286,18 +312,13 @@ const ShopkeeperCard: React.FC<ShopkeeperCardProps> = ({
           <span className="text-stone-400 font-normal flex-shrink-0">•</span>
           <div className="relative inline-block flex-shrink-0">
             <button
-              onClick={() => {
-                closeAllDropdowns();
-                setIsRaceDropdownOpen(!isRaceDropdownOpen);
-              }}
-              disabled={isLocked}
-              className={`bg-stone-100 dark:bg-gray-700 border border-stone-400 dark:border-gray-600 text-stone-600 dark:text-gray-300 text-xs
-                font-medium inter uppercase tracking-wider rounded-md px-3 py-1 cursor-pointer
-                hover:bg-stone-200 dark:hover:bg-gray-600 focus:outline-none focus:border-stone-600 dark:focus:border-stone-400 focus:ring-2 focus:ring-stone-600/10 dark:focus:ring-stone-400/10
-                flex items-center justify-between min-w-fit ${
-                  isLocked ? "opacity-50 cursor-not-allowed" : ""
-                }`}
-            >
+  onClick={() => {
+    closeAllDropdowns();
+    setIsRaceDropdownOpen(!isRaceDropdownOpen);
+  }}
+  disabled={isLocked}
+  className={buttonStyles.dropdown}
+>
               <span className="flex items-center">
                 <span className="material-symbols-outlined mr-1 leading-none">
                   person_raised_hand
@@ -345,7 +366,7 @@ const ShopkeeperCard: React.FC<ShopkeeperCardProps> = ({
           <button
             onClick={toggleLock}
             aria-label="Toggle shopkeeper lock"
-            className="text-stone-500 dark:text-gray-300 hover:text-stone-700 dark:hover:text-stone-200 transition-colors text-xs flex-shrink-0"
+            className={buttonStyles.icon}
           >
             {isLocked ? (
               <PhosphorIcon
@@ -367,7 +388,7 @@ const ShopkeeperCard: React.FC<ShopkeeperCardProps> = ({
 
         <div className="space-y-2">
           {/* Shop Motto */}
-          <p className="text-sm inter italic text-stone-400 dark:text-gray-400">
+          <p className="text-sm inter italic text-stone-500 dark:text-gray-400">
             — "{shopkeeper.motto}"
           </p>
         </div>
@@ -386,10 +407,7 @@ const ShopkeeperCard: React.FC<ShopkeeperCardProps> = ({
                 closeAllDropdowns();
                 setIsDropdownOpen(!isDropdownOpen);
               }}
-              className="bg-stone-100 dark:bg-gray-700 border border-stone-400 dark:border-gray-600 text-stone-600 dark:text-gray-300 text-xs 
-              font-medium inter uppercase tracking-wider rounded-md px-3 py-1 cursor-pointer 
-              hover:bg-stone-200 dark:hover:bg-gray-600 focus:outline-none focus:border-stone-600 dark:focus:border-stone-400 focus:ring-2 focus:ring-stone-600/10 dark:focus:ring-stone-400/10 
-              inline-flex items-center justify-between min-w-fit align-middle"
+              className={buttonStyles.dropdown}
             >
               <span className="flex items-center">
                 <span className="material-symbols-outlined mr-1 leading-none">
@@ -406,174 +424,179 @@ const ShopkeeperCard: React.FC<ShopkeeperCardProps> = ({
             </button>
 
             {isDropdownOpen && (
-              <div className="dropdown-menu absolute z-10 mt-1 bg-stone-50 dark:bg-gray-700 border border-stone-300 dark:border-gray-600 rounded-lg shadow-lg">
-                <ul className="py-0.5 text-xs text-stone-700 dark:text-gray-300">
-                  {/* Market Rate button */}
-                  <li>
-                    <button
-                      onClick={() => {
-                        closeAllDropdowns();
-                        setSelectedPricingStyle("random");
-                        setIsDropdownOpen(false);
+  <div className="dropdown-menu absolute z-10 mt-1 bg-stone-50 dark:bg-gray-700 border border-stone-300 dark:border-gray-600 rounded-lg shadow-lg">
+    <ul className="py-0.5 text-xs text-stone-700 dark:text-gray-300">
+      
+      {/* Combined list - all pricing options sorted high to low */}
+      {pricingStyles
+  .map((style, index) => {
+          const originalIndex = pricingStyles.findIndex(s => s === style);
+          
+          // Handle Standard (0%) option
+          if (style.modifier === 0) {
+            return (
+              <li key="standard">
+                <button
+                  onClick={() => {
+  console.log("=== STANDARD PRICING DEBUG ===");
+  console.log("Before setting - current selectedPricingStyle:", selectedPricingStyle);
+  
+  closeAllDropdowns();
+  const standardIndex = pricingStyles.findIndex(s => s.modifier === 0);
+  setSelectedPricingStyle(standardIndex.toString());
+  console.log("After setting - should be random");
+  console.log("===============================");
+  setIsDropdownOpen(false);
 
-                        const standardPricingStyle =
-                          pricingStyles.find((style) => style.modifier === 0) ||
-                          pricingStyles[0];
-                        const newPriceModifier = standardPricingStyle.modifier;
+                    const standardPricingStyle = pricingStyles.find((style) => style.modifier === 0) || pricingStyles[0];
+                    const newPriceModifier = standardPricingStyle.modifier;
 
-                        const descriptionData =
-                          regenerateDescriptionForPricing(newPriceModifier);
-                        const shopDescriptionData = generateShopDescription(
-                          shopkeeper.shopType,
-                          settlementSize,
-                          newPriceModifier,
-                          {
-                            location: shopkeeper.shopDescriptionParts.location,
-                          }
-                        );
+                    const descriptionData = regenerateDescriptionForPricing(newPriceModifier);
+                    const shopDescriptionData = generateShopDescription(
+                      shopkeeper.shopType,
+                      settlementSize,
+                      newPriceModifier,
+                      {
+                        location: shopkeeper.shopDescriptionParts.location,
+                      }
+                    );
 
-                        const newMotto = generateMotto(
-                          shopkeeper.shopType,
-                          newPriceModifier
-                        );
+                    const newMotto = generateMotto(shopkeeper.shopType, newPriceModifier);
 
-                        let newShopName = shopkeeper.shopName;
-                        if (
-                          hasRefinementElements(
-                            shopkeeper.shopName,
-                            shopkeeper.shopType
-                          )
-                        ) {
-                          newShopName = replaceRefinementTitle(
-                            shopkeeper.shopName,
-                            shopkeeper.shopType,
-                            newPriceModifier
-                          );
-                        }
-                        setShopkeeper({
-                          ...shopkeeper,
-                          shopName: newShopName,
-                          priceModifier: newPriceModifier,
-                          pricingStyle: standardPricingStyle.style,
-                          motto: newMotto,
-                          shopDescription: shopDescriptionData.fullDescription,
-                          shopDescriptionParts: {
-                            location: shopDescriptionData.location,
-                            interior: shopDescriptionData.interior,
-                            texture: shopDescriptionData.texture,
-                          },
-                          description: descriptionData.description,
-                          descriptionTemplate:
-                            descriptionData.descriptionTemplate,
-                        });
-                      }}
-                      className="block w-full text-left px-3 py-1 hover:bg-stone-100 text-stone-600 dark:text-gray-300 font-medium inter uppercase tracking-wider"
-                    >
-                      <span className="flex items-center">
-                        <span className="material-symbols-outlined shop-icon text-stone-400 mr-1">
-                          money_bag
-                        </span>
-                        Standard
-                      </span>
-                    </button>
-                  </li>
-
-                  {/* Each pricing option button */}
-                  {pricingStyles
-                    .filter((style) => style.modifier !== 0)
-                    .sort((a, b) => b.modifier - a.modifier)
-                    .map((style, index) => {
-                      const originalIndex = pricingStyles.findIndex(
-                        (s) => s === style
+                    let newShopName = shopkeeper.shopName;
+                    if (hasRefinementElements(shopkeeper.shopName, shopkeeper.shopType)) {
+                      newShopName = replaceRefinementTitle(
+                        shopkeeper.shopName,
+                        shopkeeper.shopType,
+                        newPriceModifier
                       );
-                      const description =
-                        style.modifier > 0
-                          ? `${Math.abs(style.modifier * 100).toFixed(
-                              0
-                            )}% Above`
-                          : `${Math.abs(style.modifier * 100).toFixed(
-                              0
-                            )}% Below`;
+                    }
+                    // Just adjust prices, don't regenerate inventory
+const adjustedCommonItems = shopkeeper.commonItems.map(item => ({
+  ...item,
+  adjustedPrice: adjustPrice(item.basePrice, newPriceModifier)
+}));
 
-                      return (
-                        <li key={originalIndex}>
-                          <button
-                            onClick={() => {
-                              closeAllDropdowns();
-                              setSelectedPricingStyle(originalIndex.toString());
-                              setIsDropdownOpen(false);
+const adjustedRareItems = shopkeeper.rareItems.map(item => ({
+  ...item,
+  adjustedPrice: adjustPrice(item.basePrice, newPriceModifier)
+}));
 
-                              const pricingStyleObj =
-                                pricingStyles[originalIndex];
-                              const newPriceModifier = pricingStyleObj.modifier;
+setShopkeeper({
+  ...shopkeeper,
+  shopName: newShopName,
+  priceModifier: newPriceModifier,
+  pricingStyle: standardPricingStyle.style,
+  motto: newMotto,
+  shopDescription: shopDescriptionData.fullDescription,
+  shopDescriptionParts: {
+    location: shopDescriptionData.location,
+    interior: shopDescriptionData.interior,
+    texture: shopDescriptionData.texture,
+  },
+  description: descriptionData.description,
+  descriptionTemplate: descriptionData.descriptionTemplate,
+  commonItems: adjustedCommonItems,
+  rareItems: adjustedRareItems,
+});
+                  }}
+                  className="block w-full text-left px-3 py-1 hover:bg-stone-100 text-stone-600 dark:text-gray-300 font-medium inter uppercase tracking-wider"
+                >
+                  <span className="flex items-center">
+                    <span className="material-symbols-outlined shop-icon text-stone-400 mr-1">
+                      money_bag
+                    </span>
+                    Standard
+                  </span>
+                </button>
+              </li>
+            );
+          }
+          
+          // Handle all other pricing options
+          const description = style.modifier > 0
+            ? `${Math.abs(style.modifier * 100).toFixed(0)}% Above`
+            : `${Math.abs(style.modifier * 100).toFixed(0)}% Below`;
 
-                              const descriptionData =
-                                regenerateDescriptionForPricing(
-                                  newPriceModifier
-                                );
+          return (
+            <li key={style.modifier}>
+              <button
+                onClick={() => {
+  closeAllDropdowns();
+  
+  const newPriceModifier = style.modifier;
+  
+  // Store the index instead of the modifier
+  const styleIndex = pricingStyles.findIndex(s => s.modifier === style.modifier);
+  setSelectedPricingStyle(styleIndex.toString());
+console.log("After setting - new selectedPricingStyle should be:", style.modifier.toString());
+console.log("==============================");
+setIsDropdownOpen(false);
 
-                              const shopDescriptionData =
-                                generateShopDescription(
-                                  shopkeeper.shopType,
-                                  settlementSize,
-                                  newPriceModifier,
-                                  {
-                                    location:
-                                      shopkeeper.shopDescriptionParts.location,
-                                  }
-                                );
-                              const newMotto = generateMotto(
-                                shopkeeper.shopType,
-                                newPriceModifier
-                              );
+const descriptionData = regenerateDescriptionForPricing(newPriceModifier);
+const shopDescriptionData = generateShopDescription(
+  shopkeeper.shopType,
+  settlementSize,
+  newPriceModifier,
+  {
+    location: shopkeeper.shopDescriptionParts.location,
+  }
+);
+const newMotto = generateMotto(shopkeeper.shopType, newPriceModifier);
 
-                              let newShopName = shopkeeper.shopName;
-                              if (
-                                hasRefinementElements(
-                                  shopkeeper.shopName,
-                                  shopkeeper.shopType
-                                )
-                              ) {
-                                newShopName = replaceRefinementTitle(
-                                  shopkeeper.shopName,
-                                  shopkeeper.shopType,
-                                  newPriceModifier
-                                );
-                              }
+let newShopName = shopkeeper.shopName;
+if (hasRefinementElements(shopkeeper.shopName, shopkeeper.shopType)) {
+  newShopName = replaceRefinementTitle(
+    shopkeeper.shopName,
+    shopkeeper.shopType,
+    newPriceModifier
+  );
+}
 
-                              setShopkeeper({
-                                ...shopkeeper,
-                                shopName: newShopName,
-                                priceModifier: newPriceModifier,
-                                pricingStyle: pricingStyleObj.style,
-                                motto: newMotto,
-                                shopDescription:
-                                  shopDescriptionData.fullDescription,
-                                shopDescriptionParts: {
-                                  location: shopDescriptionData.location,
-                                  interior: shopDescriptionData.interior,
-                                  texture: shopDescriptionData.texture,
-                                },
-                                description: descriptionData.description,
-                                descriptionTemplate:
-                                  descriptionData.descriptionTemplate,
-                              });
-                            }}
-                            className="block w-full text-left px-3 py-1.5 hover:bg-stone-100 dark:hover:bg-gray-600 text-stone-600 dark:text-gray-300 font-medium inter uppercase tracking-wider"
-                          >
-                            <span className="flex items-center">
-                              <span className="material-symbols-outlined shop-icon text-stone-400 mr-1">
-                                money_bag
-                              </span>
-                              {description}
-                            </span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                </ul>
-              </div>
-            )}
+// Update prices on existing items instead of regenerating
+const adjustedCommonItems = shopkeeper.commonItems.map(item => ({
+  ...item,
+  adjustedPrice: adjustPrice(item.basePrice, newPriceModifier)
+}));
+
+const adjustedRareItems = shopkeeper.rareItems.map(item => ({
+  ...item,
+  adjustedPrice: adjustPrice(item.basePrice, newPriceModifier)
+}));
+                  setShopkeeper({
+                    ...shopkeeper,
+                    shopName: newShopName,
+                    priceModifier: newPriceModifier,
+                    pricingStyle: style.style,
+                    motto: newMotto,
+                    shopDescription: shopDescriptionData.fullDescription,
+                    shopDescriptionParts: {
+                      location: shopDescriptionData.location,
+                      interior: shopDescriptionData.interior,
+                      texture: shopDescriptionData.texture,
+                    },
+                    description: descriptionData.description,
+                    descriptionTemplate: descriptionData.descriptionTemplate,
+commonItems: adjustedCommonItems,
+rareItems: adjustedRareItems,
+                  });
+                }}
+                className="block w-full text-left px-3 py-1.5 hover:bg-stone-100 dark:hover:bg-gray-600 text-stone-600 dark:text-gray-300 font-medium inter uppercase tracking-wider"
+              >
+                <span className="flex items-center">
+                  <span className="material-symbols-outlined shop-icon text-stone-400 mr-1">
+                    money_bag
+                  </span>
+                  {description}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+        
+    </ul>
+  </div>
+)}
           </span>
           <span>
             {" "}

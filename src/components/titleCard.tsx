@@ -1,5 +1,6 @@
 // components/TitleCard.tsx
 import React from "react";
+import { buttonStyles } from "../styles/buttonStyles";
 
 interface TitleCardProps {
   isDarkMode: boolean;
@@ -43,14 +44,14 @@ const TitleCard: React.FC<TitleCardProps> = ({
           {/* Dark Mode Toggle */}
           <button
             onClick={() => setIsDarkMode(!isDarkMode)}
-            className="flex items-center justify-center gap-2 text-xs font-medium inter uppercase tracking-wider rounded-md border px-2 py-1 bg-stone-100 dark:bg-gray-700 text-stone-500 dark:text-gray-300 border-stone-400 dark:border-gray-600 hover:bg-stone-200 dark:hover:bg-gray-600 transition"
+            className={`${buttonStyles.dropdown} gap-2`}
             title={
               isDarkMode ? "Switch to light mode" : "Switch to dark mode"
             }
           >
             <span
               className="material-symbols-outlined"
-              style={{ fontSize: "18px" }}
+              style={{ fontSize: "20px" }}
             >
               {isDarkMode ? "light_mode" : "dark_mode"}
             </span>
@@ -60,11 +61,11 @@ const TitleCard: React.FC<TitleCardProps> = ({
           {/* Randomize Button */}
           <button
             onClick={handleRandomize}
-            className="flex items-center justify-center sm:justify-start gap-2 text-xs font-medium inter uppercase tracking-wider rounded-md border px-2 py-1 bg-stone-100 dark:bg-gray-700 text-stone-500 dark:text-gray-300 border-stone-400 dark:border-gray-600 hover:bg-stone-200 dark:hover:bg-gray-600 transition"
+            className={`${buttonStyles.dropdown} gap-2`}
           >
             <span
               className="material-symbols-outlined"
-              style={{ fontSize: "18px" }}
+              style={{ fontSize: "20px" }}
             >
               casino
             </span>
@@ -80,7 +81,7 @@ const TitleCard: React.FC<TitleCardProps> = ({
           to change the shop type or location. The inventory updates to match.
           <br />
           <br />
-          <span className="font-semibold">Coming soon:</span> Shop selling
+          <span className="font-semibold">Coming soon:</span> Shop purchase
           mechanics! Add your items, set quantities, and we'll do the math for
           you.
         </p>

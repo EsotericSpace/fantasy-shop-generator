@@ -8,7 +8,7 @@ import {
   lastNames,
   raceNamingStyles,
 } from "../data/names";
-import { shopItems, commonItems, rareItems } from "../data/shopItems";
+import { getCommonItems, getRareItems } from "../data/shopItems";
 import { texturalDetails, interiors, setting } from "../data/shopDescriptions";
 import {
   shopkeeperIntroductions,
@@ -274,7 +274,7 @@ export const generateCommonItems = (
   priceModifier: number,
   limits: { numCommonItems: number; maxCommonRarity: string }
 ): ShopItem[] => {
-  const commonInventory = commonItems[shopTypeValue];
+  const commonInventory = getCommonItems(shopTypeValue as string);
   const selectedCommonItems: ShopItem[] = [];
   const usedCommonIndices = new Set();
 
@@ -321,7 +321,7 @@ export const generateRareItems = (
   priceModifier: number,
   limits: { numRareItems: number; maxRareRarity: string }
 ): ShopItem[] => {
-  const rareInventory = rareItems[shopTypeValue];
+  const rareInventory = getRareItems(shopTypeValue as string);
   const selectedRareItems: ShopItem[] = [];
   const usedRareIndices = new Set();
 

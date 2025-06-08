@@ -343,3 +343,355 @@ export const getHaggleResultType = (
     return "minorFailure";
   }
 };
+
+// Add these additions to your shopkeeperSellingDetails.ts file:
+
+// Post-haggle reaction descriptions (for successful negotiations)
+export const postHaggleMoodDescriptions: Record<string, string[]> = {
+  welcoming: [
+    "beams with genuine appreciation, clearly enjoying the mental sparring you just provided",
+    "nods with visible respect, the kind earned through skillful negotiation rather than given freely",
+    "clasps {possessive} hands together with satisfaction, delighted by the quality of your argument",
+    "leans back with an impressed whistle, already looking forward to your next visit",
+    "grins wide and shakes {possessive} head in admiration—you've made this transaction memorable",
+  ],
+  open: [
+    "nods approvingly, the tension of negotiation melting into mutual respect",
+    "settles back with a satisfied expression, pleased by the fair exchange of words",
+    "chuckles softly and adjusts {possessive} posture, clearly enjoying the back-and-forth",
+    "inclines {possessive} head in acknowledgment—you've earned {possessive} attention and respect",
+    "relaxes visibly, the successful negotiation having warmed the professional atmosphere",
+  ],
+  reserved: [
+  "maintains {possessive} composure, offering the faintest nod of acknowledgment",
+  "shows no emotion, though a slight pause suggests your words left a mark",
+  "keeps {possessive} expression neutral, but there's a flicker in {possessive} eyes—grudging respect, perhaps",
+  "remains perfectly still, but the way {pronoun} handles the coin now feels different",
+  "gives nothing away, though the focused attention on your words suggests you were heard",
+],
+
+  doubtful: [
+  "furrows {possessive} brow, turning your argument over with visible doubt",
+  "shakes {possessive} head slowly—surprised you kept pushing, even without strong ground",
+  "looks unconvinced, but something about your approach gives {pronoun} pause",
+  "maintains a skeptical look, though {pronoun} begrudgingly concedes the point",
+  "wavers between dismissal and intrigue, your persistence earning a sliver of credit",
+],
+
+  dismissive: [
+  "scowls, but completes the transaction with stiff efficiency",
+  "clearly irritated, though {pronoun} follows through out of obligation",
+  "holds a cold gaze—any goodwill has long since burned off",
+  "moves with clipped, sharp gestures that signal quiet offense",
+  "finishes the deal in silence, pride clearly bruised",
+],
+
+};
+
+/**
+ * Get a random post-haggle mood description for the given mood
+ */
+export const getPostHaggleMoodDescription = (mood: string): string => {
+  const descriptions = postHaggleMoodDescriptions[mood];
+  if (!descriptions || descriptions.length === 0) {
+    return "processes the negotiation result";
+  }
+  return descriptions[Math.floor(Math.random() * descriptions.length)];
+};
+
+/**
+ * Get post-haggle description with pronouns processed
+ */
+export const getPostHaggleDescription = (
+  mood: string,
+  pronouns: ShopkeeperPronouns
+): string => {
+  const rawDesc = getPostHaggleMoodDescription(mood);
+  return processDescriptionText(rawDesc, pronouns);
+};
+
+// ADD TO shopkeeperSellingDetails.ts AFTER THE SUCCESS DESCRIPTIONS:
+
+// Post-haggle failure descriptions (for failed negotiations)
+export const postHaggleFailureDescriptions: Record<string, string[]> = {
+  welcoming: [
+  "winces, disappointed by the attempt but still wearing a warm smile",
+  "shakes {possessive} head with a rueful grin—{pronoun} clearly expected more from you",
+  "sighs, {possessive} bright demeanor dimmed but not extinguished",
+  "raises an eyebrow, surprised and a little hurt by the weak reasoning you offered",
+  "keeps a patient look, though your argument was clearly a letdown",
+],
+
+  open: [
+  "frowns, visibly disappointed by your failed attempt",
+  "leans back, {possessive} warmth fading beneath a skeptical gaze",
+  "crosses {possessive} arms, the failure drawing a line between you",
+  "shakes {possessive} head, unimpressed by your tactic to say the least",
+  "holds a professional tone, but the edge in {possessive} voice betrays frustration",
+],
+
+  reserved: [
+  "shows no reaction, but the cold in {possessive} posture says enough",
+  "remains still, though the silence now feels tense and final",
+  "gives you a long, unreadable look. It doesn’t feel like approval",
+  "keeps {possessive} expression neutral, but there's been a shift in the air",
+  "says nothing, though the way {pronoun} completes the deal feels colder",
+],
+
+  doubtful: [
+  "narrows {possessive} eyes. Your failure confirms {possessive} doubts",
+  "shakes {possessive} head in disapproval, clearly unimpressed",
+  "scoffs, your attempt doing nothing to ease {possessive} suspicion",
+  "levels you with a stare, your words only deepening {possessive} mistrust",
+  "keeps a wary expression.Your failure just made things worse",
+],
+
+  dismissive: [
+  "scowls, your failed pitch sealing {possessive} disdain",
+  "rolls {possessive} eyes without restraint. You're not worth the effort",
+  "snorts, clearly offended you even tried that",
+  "turns away mid-sentence, done entertaining nonsense",
+  "glares, your failure confirming what {pronoun} suspected all along",
+],
+
+};
+
+/**
+ * Get a random post-haggle failure description for the given mood
+ */
+export const getPostHaggleFailureDescription = (mood: string): string => {
+  const descriptions = postHaggleFailureDescriptions[mood];
+  if (!descriptions || descriptions.length === 0) {
+    return "reacts poorly to the failed negotiation";
+  }
+  return descriptions[Math.floor(Math.random() * descriptions.length)];
+};
+
+/**
+ * Get post-haggle failure description with pronouns processed
+ */
+export const getProcessedPostHaggleFailureDescription = (
+  mood: string,
+  pronouns: ShopkeeperPronouns
+): string => {
+  const rawDesc = getPostHaggleFailureDescription(mood);
+  return processDescriptionText(rawDesc, pronouns);
+};
+
+export const cartChangeQuotes: Record<string, Record<string, string[]>> = {
+  // After successful haggling, then cart changes
+  afterSuccessfulHaggle: {
+    stingy: [
+      "Changing your mind already? I suppose that clever tongue of yours works both ways.",
+      "Ah, having second thoughts? Well, that negotiation skill won't carry over to new items.",
+      "Switching tactics, are we? Don't expect the same favorable terms on different goods.",
+      "Already reconsidering? Smart. Though you'll need to earn any discounts all over again.",
+      "A strategic retreat? Fine. But we start fresh with whatever you're selling now.",
+    ],
+    generous: [
+      "Oh, switching things up? No worries! Fresh items, fresh conversation.",
+      "New items? Excellent! I always enjoy seeing what traders bring to the table.",
+      "A change of heart? That's perfectly fine. Let's see what you've got now.",
+      "Different goods, different story! I'm curious to hear your pitch on these.",
+      "Starting over? I appreciate a trader who knows their own mind.",
+    ],
+    standard: [
+      "Different items, different negotiation. We'll start fresh.",
+      "Changing your selection? That's fair. Let's discuss these new items.",
+      "New goods require new terms. What are you looking to sell now?",
+      "A different approach, I see. Let's evaluate these items properly.",
+      "Fresh inventory means we reset our discussion. What's the proposal?",
+    ],
+  },
+
+  // After failed haggling, then cart changes
+  afterFailedHaggle: {
+    stingy: [
+      "Smart move. Those items weren't doing you any favors in our negotiation.",
+      "Wise choice. Perhaps these new items will inspire better arguments.",
+      "Finally showing some sense. Let's hope your reasoning improves with the new selection.",
+      "A tactical withdrawal? Good. Maybe reconsider your approach this time.",
+      "Better items might lead to better negotiating. We shall see.",
+    ],
+    generous: [
+      "Hey, no problem! Sometimes different items just speak to you differently.",
+      "Fresh start, fresh energy! Maybe these will be more inspiring to discuss.",
+      "That's totally fine! Let's see if these new items spark better conversation.",
+      "No worries at all! Different goods, different possibilities.",
+      "A clean slate! I'm optimistic about whatever you're bringing now.",
+    ],
+    standard: [
+      "Perhaps different items will lead to better outcomes.",
+      "A fresh selection calls for a fresh evaluation.",
+      "New items, new opportunity to make your case.",
+      "Different goods might warrant different considerations.",
+      "Starting over with new inventory. Let's see how this goes.",
+    ],
+  },
+
+  // After really bad haggling (dismissive/doubtful mood), then cart changes
+  afterPoorHaggle: {
+    stingy: [
+      "Finally admitting those weren't worth defending? How refreshing.",
+      "About time. Perhaps you'll waste less of my time with these new items.",
+      "Good. Maybe you'll think twice before insulting my intelligence again.",
+      "A moment of clarity at last. Let's hope it extends to your negotiation skills.",
+      "Cutting your losses? Smart. Don't repeat whatever that was.",
+    ],
+    generous: [
+      "Oh! Well, that's... okay! Let's try this again with better energy.",
+      "Sure, let's put that behind us. Fresh items, fresh start!",
+      "No problem! Everyone has off days. Maybe these will go better.",
+      "That's fine! Sometimes you just need the right items to feel confident.",
+      "Of course! Let's see if these inspire better conversation.",
+    ],
+    standard: [
+      "A wise decision. Let's approach these new items with better judgment.",
+      "Probably for the best. New items deserve proper consideration.",
+      "Fair enough. Perhaps a different selection will fare better.",
+      "New goods, new opportunity. Try to make it count this time.",
+      "Starting fresh. Let's hope for more productive discussion.",
+    ],
+  },
+
+  // No haggling occurred yet, neutral cart change
+  neutralChange: {
+    stingy: [
+      "Reconsidering your options? Prudent.",
+      "Different items entirely. Very well.",
+      "A change of strategy, I see.",
+      "New selections require new calculations.",
+      "Fresh inventory. Let's assess the value.",
+    ],
+    generous: [
+      "Ooh, different items! I love variety.",
+      "New things to look at! How exciting.",
+      "Switching it up? I'm all for it!",
+      "Fresh selections! Let's see what we have.",
+      "Different goods? Always interesting!",
+    ],
+    standard: [
+      "Different items, then. Let's evaluate these.",
+      "New selection. We'll assess accordingly.",
+      "A change in inventory. Fair enough.",
+      "Fresh items to consider.",
+      "Different goods require different evaluation.",
+    ],
+  },
+};
+
+export const cartChangeDescriptions: Record<string, Record<string, string[]>> = {
+  // After successful haggling
+  afterSuccessfulHaggle: {
+    welcoming: [
+      "chuckles good-naturedly at your change of heart, clearly amused by the shift in strategy",
+      "nods with understanding, maintaining the warm rapport despite the tactical change",
+      "grins at the sudden pivot, appreciating the business acumen even if it resets negotiations",
+      "raises an eyebrow with interest, curious about the new direction you're taking",
+      "settles back with a knowing smile, ready to engage with whatever you're offering now",
+    ],
+    open: [
+      "adjusts to the new situation with professional grace, ready to start fresh",
+      "nods thoughtfully, processing the change while maintaining a fair demeanor", 
+      "resets {possessive} stance with mild curiosity about your new approach",
+      "shows polite interest in the new items, though the previous rapport has cooled slightly",
+      "maintains a businesslike expression, prepared to evaluate the new situation objectively",
+    ],
+    reserved: [
+      "observes the change with neutral composure, giving nothing away about {possessive} thoughts",
+      "makes note of the shift without visible reaction, simply waiting for your next move",
+      "maintains {possessive} careful distance, treating this as an entirely new transaction",
+      "shows no surprise at the change, having seen such tactics before",
+      "resets to professional baseline, any previous warmth now carefully contained",
+    ],
+  },
+
+  // After failed haggling
+  afterFailedHaggle: {
+    doubtful: [
+      "watches the change with obvious skepticism, wondering what new trick you're attempting",
+      "narrows {possessive} eyes at the sudden shift, clearly suspicious of your motives",
+      "observes your new selection with the wariness of someone who's been burned before",
+      "maintains a guarded expression, uncertain whether this change improves your position",
+      "studies the new items with visible doubt about your continued negotiating prospects",
+    ],
+    dismissive: [
+      "rolls {possessive} eyes at the sudden change, making no effort to hide {possessive} disdain",
+      "snorts derisively at your tactical retreat, clearly unimpressed by the maneuver",
+      "shows open irritation at having to restart after your previous poor performance",
+      "glares at the new selection with undisguised annoyance at your continued presence",
+      "makes no effort to hide {possessive} displeasure at this obvious attempt to salvage the situation",
+    ],
+  },
+
+  // Neutral cart changes (no prior haggling)
+  neutralChange: {
+    welcoming: [
+      "shifts attention to the new items with genuine interest and enthusiasm",
+      "brightens at the fresh selection, eager to explore new possibilities",
+      "welcomes the change with characteristic warmth and curiosity",
+    ],
+    open: [
+      "adjusts focus to the new items with professional attention",
+      "transitions smoothly to evaluating the fresh selection",
+      "shows measured interest in the different approach you're taking",
+    ],
+    reserved: [
+      "notes the change without visible reaction, simply waiting for clarification",
+      "observes the new selection with characteristic neutrality",
+      "maintains composed silence while assessing the altered situation",
+    ],
+    doubtful: [
+      "eyes the new selection with the same skepticism as before",
+      "maintains a wary expression while examining the different items",
+      "shows continued wariness despite the change in your approach",
+    ],
+    dismissive: [
+      "glances at the new items with minimal interest",
+      "shows little enthusiasm for the changed selection",
+      "maintains a disinterested demeanor despite your tactical shift",
+    ],
+  },
+};
+
+// Helper function to get cart change reaction
+export const getCartChangeReaction = (
+  hadHaggling: boolean,
+  lastHaggleWasSuccessful: boolean | null,
+  currentMood: string,
+  priceModifier: number,
+  pronouns: ShopkeeperPronouns
+): { description: string; quote: string } => {
+  const personality = getPersonalityType(priceModifier);
+  
+  let reactionType: string;
+  let moodForDescription: string;
+
+  if (!hadHaggling) {
+    reactionType = 'neutralChange';
+    moodForDescription = currentMood;
+  } else if (lastHaggleWasSuccessful) {
+    reactionType = 'afterSuccessfulHaggle';
+    moodForDescription = currentMood;
+  } else {
+    // Failed haggle - check if mood is particularly sour
+    if (currentMood === 'dismissive' || currentMood === 'doubtful') {
+      reactionType = 'afterPoorHaggle';
+      moodForDescription = currentMood;
+    } else {
+      reactionType = 'afterFailedHaggle';
+      moodForDescription = currentMood;
+    }
+  }
+
+  // Get quote
+  const quotes = cartChangeQuotes[reactionType]?.[personality] || cartChangeQuotes['neutralChange']?.[personality] || [];
+  const quote = quotes.length > 0 ? quotes[Math.floor(Math.random() * quotes.length)] : "Let's start over.";
+
+  // Get description
+  const descriptions = cartChangeDescriptions[reactionType]?.[moodForDescription] || cartChangeDescriptions['neutralChange']?.[moodForDescription] || [];
+  const rawDescription = descriptions.length > 0 ? descriptions[Math.floor(Math.random() * descriptions.length)] : "reacts to the change";
+  const description = processDescriptionText(rawDescription, pronouns);
+
+  return { description, quote };
+};

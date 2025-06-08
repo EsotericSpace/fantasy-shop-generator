@@ -2357,18 +2357,73 @@ export const shopItems = {
   ],
 };
 
-// Split shopItems into common and rare based on rarity
-export const commonItems: Record<string, any[]> = {};
-export const rareItems: Record<string, any[]> = {};
+// Enhanced debugging function
+export const getCommonItems = (category: string) => {
+  console.log("=== getCommonItems Debug ===");
+  console.log("Requested category:", category);
+  console.log("Available categories:", Object.keys(shopItems));
+  console.log("Category exists:", category in shopItems);
+  
+  const items = shopItems[category] || [];
+  console.log("Raw items found:", items.length);
+  console.log("First few raw items:", items.slice(0, 2));
+  
+  // Use map + filter instead of just filter
+  const result = items
+    .filter(item => {
+      const isValid = item && item.level && ["Common", "Uncommon"].includes(item.level);
+      if (!isValid && item) {
+        console.log("Filtered out item:", item.name, "level:", item.level);
+      }
+      return isValid;
+    })
+    .map(item => ({ ...item })); // Create fresh copies
+  
+  console.log("Filtered result count:", result.length);
+  console.log("Map+filter result:", result.slice(0, 2));
+  console.log("=== End getCommonItems Debug ===");
+  
+  return result;
+};
 
-Object.keys(shopItems).forEach((category) => {
-  commonItems[category] = shopItems[category].filter((item) =>
-    ["Common", "Uncommon"].includes(item.level)
-  );
-  rareItems[category] = shopItems[category].filter((item) =>
+export const getRareItems = (category: string) => {
+  console.log("=== getRareItems Debug ===");
+  console.log("Requested category:", category);
+  
+  const items = shopItems[category] || [];
+  const result = items.filter((item) =>
     ["Rare", "Very rare", "Legendary"].includes(item.level)
   );
-});
+  
+  console.log("Raw items found:", items.length);
+  console.log("Rare items filtered:", result.length);
+  console.log("=== End getRareItems Debug ===");
+  
+  return result;
+};
 
 // All shop types array
 export const allShopTypes = Object.keys(shopItems);
+
+// Helper function to normalize shop type names
+export const normalizeShopType = (shopType: string): string => {
+  const normalized = shopType.trim();
+  
+  // Check if it exists as-is
+  if (shopItems[normalized]) {
+    return normalized;
+  }
+  
+  // Try to find a case-insensitive match
+  const found = Object.keys(shopItems).find(
+    key => key.toLowerCase() === normalized.toLowerCase()
+  );
+  
+  if (found) {
+    console.log(`Normalized shop type "${shopType}" to "${found}"`);
+    return found;
+  }
+  
+  console.error(`Shop type "${shopType}" not found. Available types:`, Object.keys(shopItems));
+  return "General Store"; // Default fallback
+};

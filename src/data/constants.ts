@@ -15,9 +15,9 @@ export const pricingStyles = [
   { style: 'Premium prices for "quality"', modifier: 0.2 },
   { style: "Suspiciously cheap", modifier: -0.2 },
   { style: "Haggler who starts high", modifier: 0.15 },
-  { style: "Based on how much they like you", modifier: 0.1 },
-  { style: 'Charges extra for "authenticity"', modifier: 0.18 },
   { style: "Surprisingly affordable", modifier: -0.15 },
+  { style: "Slightly overpriced", modifier: 0.1 },
+  { style: "Good value for money", modifier: -0.1 },
 ];
 
 // Shop type icons mapping

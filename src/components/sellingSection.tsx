@@ -1,8 +1,20 @@
 // components/SellingSection.tsx
 import React, { useState, useEffect } from "react";
-import { getShopkeeperDescriptions } from "../data/shopkeeperSellingDetails";
-import { getHaggleQuote, getHaggleResultType } from "../data/shopkeeperSellingDetails";
+import { buttonStyles } from '../styles/buttonStyles'
+import Tooltip from '../components/tooltip';
 import {
+  getHaggleQuote,
+  getHaggleResultType,
+} from "../data/shopkeeperSellingDetails";
+import {
+  getShopkeeperDescriptions,
+  getPostHaggleDescription,
+  getProcessedPostHaggleFailureDescription,
+  getCartChangeReaction,
+} from "../data/shopkeeperSellingDetails";
+
+import {
+  sortItems,
   getCategoryForItem,
   getIconForItem,
   getIconComponent,
@@ -59,17 +71,25 @@ interface SellingSectionProps {
   setIsCategoryFilterDropdownOpen: (open: boolean) => void;
   isCharismaDropdownOpen: boolean;
   setIsCharismaDropdownOpen: (open: boolean) => void;
-  getHagglingStyle: (settlementSize: string, priceModifier: number) => { name: string; dcModifier: number };
+  getHagglingStyle: (
+    settlementSize: string,
+    priceModifier: number
+  ) => { name: string; dcModifier: number };
+  isSortDropdownOpen: boolean;
+  setIsSortDropdownOpen: (open: boolean) => void;
 }
 
 // Mood scale from worst to best
 const moodScale = ["dismissive", "doubtful", "reserved", "open", "welcoming"];
 
 // Apply persistent charisma modifier to any mood
-const applyCharismaMoodModifier = (baseMood: string, charisma: number): string => {
+const applyCharismaMoodModifier = (
+  baseMood: string,
+  charisma: number
+): string => {
   const currentIndex = moodScale.indexOf(baseMood);
   if (currentIndex === -1) return baseMood; // fallback if mood not found
-  
+
   let modifier = 0;
   if (charisma >= 3) {
     // +3,+4 = +1 mood, +5,+6 = +2 mood, etc.
@@ -79,8 +99,11 @@ const applyCharismaMoodModifier = (baseMood: string, charisma: number): string =
     modifier = Math.ceil((charisma + 2) / 2);
   }
   // charisma -2 to +2 = no modifier
-  
-  const newIndex = Math.max(0, Math.min(moodScale.length - 1, currentIndex + modifier));
+
+  const newIndex = Math.max(
+    0,
+    Math.min(moodScale.length - 1, currentIndex + modifier)
+  );
   return moodScale[newIndex];
 };
 
@@ -88,19 +111,22 @@ const getDisplayMood = (baseMood: string, charisma: number): string => {
   const moodScale = ["dismissive", "doubtful", "reserved", "open", "welcoming"];
   const currentIndex = moodScale.indexOf(baseMood);
   if (currentIndex === -1) return baseMood;
-  
+
   let modifier = 0;
   if (charisma >= 3) modifier = Math.floor((charisma - 1) / 2);
   else if (charisma <= -3) modifier = Math.ceil((charisma + 1) / 2);
-  
-  const newIndex = Math.max(0, Math.min(moodScale.length - 1, currentIndex + modifier));
+
+  const newIndex = Math.max(
+    0,
+    Math.min(moodScale.length - 1, currentIndex + modifier)
+  );
   return moodScale[newIndex];
 };
 
 // Helper to set mood with automatic charisma application
 const setMoodWithCharisma = (
-  baseMood: string, 
-  charisma: number, 
+  baseMood: string,
+  charisma: number,
   setShopkeeperMood: (mood: string) => void
 ) => {
   const adjustedMood = applyCharismaMoodModifier(baseMood, charisma);
@@ -131,6 +157,13 @@ const SellingSection: React.FC<SellingSectionProps> = ({
   const [isHaggling, setIsHaggling] = useState(false);
   const [isHaggleReaction, setIsHaggleReaction] = useState(false);
   const [currentHaggleQuote, setCurrentHaggleQuote] = useState<string>("");
+  const [hasHaggled, setHasHaggled] = useState(false);
+  const [lastHaggleWasSuccessful, setLastHaggleWasSuccessful] = useState<
+    boolean | null
+  >(null);
+  const [isCartChangeReaction, setIsCartChangeReaction] = useState(false);
+  const [cartChangeDescription, setCartChangeDescription] = useState("");
+  const [cartChangeQuote, setCartChangeQuote] = useState("");
   const [hasTriedCharismaCheck, setHasTriedCharismaCheck] = useState(false);
   const [relationshipStatus, setRelationshipStatus] = useState("reserved");
   const [critFailCount, setCritFailCount] = useState(0);
@@ -139,6 +172,8 @@ const SellingSection: React.FC<SellingSectionProps> = ({
   const [lockoutReason, setLockoutReason] = useState("");
   const [selectedMoodDesc, setSelectedMoodDesc] = useState("");
   const [selectedPersonalityDesc, setSelectedPersonalityDesc] = useState("");
+  const [itemSort, setItemSort] = useState("alpha");
+  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
 
   // Helper function to get all possible items for current shop type
   const getAllShopItems = () => {
@@ -195,7 +230,8 @@ const SellingSection: React.FC<SellingSectionProps> = ({
       (item) => !sellingItems.find((selling) => selling.name === item.name)
     );
 
-    return items.sort((a, b) => a.name.localeCompare(b.name));
+    // Sort the items
+    return sortItems(items, itemSort);
   };
 
   const addItemToSell = (item: any) => {
@@ -208,7 +244,6 @@ const SellingSection: React.FC<SellingSectionProps> = ({
             : selling
         );
       } else {
-
         let marketPrice = item.price; // Start with item.price as default
 
         // First: try the basePrice from the item (should be the original market price)
@@ -236,10 +271,16 @@ const SellingSection: React.FC<SellingSectionProps> = ({
         ];
       }
     });
+
+    // Reset haggle state when cart changes
+    resetHaggleState();
   };
 
   const removeItemFromSell = (itemName: string) => {
     setSellingItems((prev) => prev.filter((item) => item.name !== itemName));
+
+    // Reset haggle state when cart changes
+    resetHaggleState();
   };
 
   const updateSellQuantity = (itemName: string, newQuantity: number) => {
@@ -253,6 +294,9 @@ const SellingSection: React.FC<SellingSectionProps> = ({
         item.name === itemName ? { ...item, quantity: newQuantity } : item
       )
     );
+
+    // Reset haggle state when cart changes
+    resetHaggleState();
   };
 
   const rollD20 = () => Math.floor(Math.random() * 20) + 1;
@@ -382,14 +426,13 @@ const SellingSection: React.FC<SellingSectionProps> = ({
       setRelationshipStatus("offended");
       setShopkeeperMood("dismissive");
 
-      const quote = getHaggleQuote('criticalFailure', shopkeeper.priceModifier);
+      const quote = getHaggleQuote("criticalFailure", shopkeeper.priceModifier);
       setCurrentHaggleQuote(quote);
       setIsHaggleReaction(true);
 
       setLockoutReason(
         `You've gravely insulted ${shopkeeper.name.split(" ")[0]}!`
       );
-
 
       setLastHaggleResult({
         roll,
@@ -498,7 +541,12 @@ const SellingSection: React.FC<SellingSectionProps> = ({
       resultText,
     });
 
-    const resultType = getHaggleResultType(roll, total, currentHaggleDC, success);
+    const resultType = getHaggleResultType(
+      roll,
+      total,
+      currentHaggleDC,
+      success
+    );
     const quote = getHaggleQuote(resultType, shopkeeper.priceModifier);
     setCurrentHaggleQuote(quote);
     setIsHaggleReaction(true);
@@ -517,6 +565,48 @@ const SellingSection: React.FC<SellingSectionProps> = ({
     );
 
     setTimeout(() => setIsHaggling(false), 1000);
+  };
+
+  const resetHaggleState = () => {
+    // Store whether we had haggling and if it was successful before resetting
+    const hadHaggling = hasHaggled;
+    const wasSuccessful = lastHaggleWasSuccessful;
+
+    // Show cart change reaction if we had previous haggling
+    if (hadHaggling && sellingItems.length > 0) {
+      const pronouns = getShopkeeperPronouns(shopkeeper.name);
+      const { description, quote } = getCartChangeReaction(
+        hadHaggling,
+        wasSuccessful, // ✅ This variable exists in this scope
+        shopkeeperMood,
+        shopkeeper.priceModifier,
+        pronouns
+      );
+
+      setCartChangeDescription(description);
+      setCartChangeQuote(quote);
+      setIsCartChangeReaction(true);
+
+      // Clear the reaction after 4 seconds
+      setTimeout(() => {
+        setIsCartChangeReaction(false);
+        setCartChangeDescription("");
+        setCartChangeQuote("");
+      }, 4000);
+    }
+
+    // Reset haggle state (at the end of resetHaggleState function)
+    setHaggleAttempts(3);
+    const hagglingStyle = getHagglingStyle(
+      settlementSize,
+      shopkeeper.priceModifier
+    );
+    setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
+    setLastHaggleResult(null);
+    setIsHaggleReaction(false);
+    setCurrentHaggleQuote("");
+    setHasHaggled(false);
+    setLastHaggleWasSuccessful(null);
   };
 
   const executeSale = () => {
@@ -549,8 +639,11 @@ const SellingSection: React.FC<SellingSectionProps> = ({
 
     setSellingItems([]);
     setHaggleAttempts(3);
-    const hagglingStyle = getHagglingStyle(settlementSize, shopkeeper.priceModifier);
-setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
+    const hagglingStyle = getHagglingStyle(
+      settlementSize,
+      shopkeeper.priceModifier
+    );
+    setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
     setLastHaggleResult(null);
     setIsHaggleReaction(false);
   };
@@ -581,8 +674,11 @@ setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
     setShopkeeperMood("reserved");
     setLockoutReason("");
     setHaggleAttempts(3);
-    const hagglingStyle = getHagglingStyle(settlementSize, shopkeeper.priceModifier);
-setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
+    const hagglingStyle = getHagglingStyle(
+      settlementSize,
+      shopkeeper.priceModifier
+    );
+    setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
     setLastHaggleResult(null);
     setIsHaggleReaction(false);
     setHasTriedCharismaCheck(false);
@@ -623,82 +719,91 @@ setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
     }
   };
 
-// Initialize mood based on shopkeeper personality and charisma
-useEffect(() => {
-  if (!shopkeeper) return;
-  
-  const moodRoll = Math.random();
-  let baseMood = "reserved";
-  
-  if (shopkeeper.priceModifier > 0.15) {
-    baseMood = moodRoll > 0.7 ? "reserved" : moodRoll > 0.4 ? "doubtful" : "open";
-  } else if (shopkeeper.priceModifier < -0.15) {
-    baseMood = moodRoll > 0.5 ? "open" : moodRoll > 0.2 ? "welcoming" : "reserved";
-  } else {
-    baseMood = moodRoll > 0.6 ? "open" : moodRoll > 0.2 ? "reserved" : "welcoming";
-  }
-  
-  // Apply charisma modifier to base mood
-  const finalMood = applyCharismaMoodModifier(baseMood, playerCharisma);
-  setShopkeeperMood(finalMood);
-  setIsHaggleReaction(false);
-}, [shopkeeper]);
+  // Initialize mood based on shopkeeper personality and charisma
+  useEffect(() => {
+    if (!shopkeeper) return;
 
-// Reset all haggling state when shopkeeper changes
-useEffect(() => {
-  if (!shopkeeper) return;
-  
-  // Reset all haggling-related state to initial values
-  setLastHaggleResult(null);
-  setIsHaggleReaction(false);
-  setCurrentHaggleQuote("");
-  setHaggleAttempts(3);
-  setHasTriedCharismaCheck(false);
-  setRelationshipStatus("reserved");
-  setCritFailCount(0);
-  setIsLockedOut(false);
-  setApologyFee(0);
-  setLockoutReason("");
-  
-  // Reset haggle DC to base value
-  const hagglingStyle = getHagglingStyle(settlementSize, shopkeeper.priceModifier);
-  setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
-  
-}, [shopkeeper?.name, shopkeeper?.shopType, settlementSize]);
+    const moodRoll = Math.random();
+    let baseMood = "reserved";
 
-useEffect(() => {
-  if (!shopkeeper) return;
-  
-  const pronouns = getShopkeeperPronouns(shopkeeper.name);
-  
-  const { moodDescription, personalityDescription } = getShopkeeperDescriptions(
-    shopkeeperMood,
-    shopkeeper.priceModifier,
-    pronouns
-  );
-  
-  setSelectedMoodDesc(moodDescription);
-  setSelectedPersonalityDesc(personalityDescription);
-}, [shopkeeperMood, shopkeeper]); // Only update when mood or shopkeeper changes
+    if (shopkeeper.priceModifier > 0.15) {
+      baseMood =
+        moodRoll > 0.7 ? "reserved" : moodRoll > 0.4 ? "doubtful" : "open";
+    } else if (shopkeeper.priceModifier < -0.15) {
+      baseMood =
+        moodRoll > 0.5 ? "open" : moodRoll > 0.2 ? "welcoming" : "reserved";
+    } else {
+      baseMood =
+        moodRoll > 0.6 ? "open" : moodRoll > 0.2 ? "reserved" : "welcoming";
+    }
+
+    // Apply charisma modifier to base mood
+    const finalMood = applyCharismaMoodModifier(baseMood, playerCharisma);
+    setShopkeeperMood(finalMood);
+    setIsHaggleReaction(false);
+  }, [shopkeeper]);
+
+  // Reset all haggling state when shopkeeper changes
+  useEffect(() => {
+    if (!shopkeeper) return;
+
+    // Reset all haggling-related state to initial values
+    setLastHaggleResult(null);
+    setIsHaggleReaction(false);
+    setCurrentHaggleQuote("");
+    setHaggleAttempts(3);
+    setHasTriedCharismaCheck(false);
+    setRelationshipStatus("reserved");
+    setCritFailCount(0);
+    setIsLockedOut(false);
+    setApologyFee(0);
+    setLockoutReason("");
+
+    // ADD THESE NEW RESETS:
+    setHasHaggled(false);
+    setLastHaggleWasSuccessful(null);
+    setIsCartChangeReaction(false);
+    setCartChangeDescription("");
+    setCartChangeQuote("");
+
+    // Reset haggle DC to base value
+    const hagglingStyle = getHagglingStyle(
+      settlementSize,
+      shopkeeper.priceModifier
+    );
+    setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
+  }, [shopkeeper?.name, shopkeeper?.shopType, settlementSize]);
+
+  useEffect(() => {
+    if (!shopkeeper) return;
+
+    const pronouns = getShopkeeperPronouns(shopkeeper.name);
+
+    // Use displayMood which includes charisma modifier, not raw shopkeeperMood
+    const displayMood = getDisplayMood(shopkeeperMood, playerCharisma);
+
+    const { moodDescription, personalityDescription } =
+      getShopkeeperDescriptions(
+        displayMood, // <- FIX: Now uses charisma-modified mood
+        shopkeeper.priceModifier,
+        pronouns
+      );
+
+    setSelectedMoodDesc(moodDescription);
+    setSelectedPersonalityDesc(personalityDescription);
+  }, [shopkeeperMood, shopkeeper, playerCharisma]);
 
   if (!shopkeeper) return null;
 
   return (
-    <div className="shopkeeper-card rounded-md shadow-md p-6 mb-6 bg-stone-100 dark:bg-gray-700">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <h3 className="text-lg font-semibold text-stone-600 dark:text-gray-300 cinzel shopkeeper-name m-0 leading-none">
-            Sell to Shop
-          </h3>
-        </div>
-      </div>
+    <div className="shopkeeper-card rounded-b-md shadow-md !pt-8 mb-6 bg-stone-100 dark:bg-gray-700">
 
       {/* Shopkeeper Buying Info with Integrated Mood */}
       <div className="text-sm text-stone-600 dark:text-gray-300 border rounded-lg border-stone-300  p-4 mb-4">
         {(() => {
           const pronouns = getShopkeeperPronouns(shopkeeper.name);
 
-           const displayMood = getDisplayMood(shopkeeperMood, playerCharisma);
+          const displayMood = getDisplayMood(shopkeeperMood, playerCharisma);
           const {
             moodDescription: processedMoodDesc,
             personalityDescription: processedPersonalityDesc,
@@ -718,109 +823,147 @@ useEffect(() => {
                 >
                   person_raised_hand
                 </span>
-{/* Haggling Style Badge */}
-<span
-  className={`inline-flex items-center gap-1 px-2 text-[0.65rem] px-[0.4rem] py-[0.15rem] rounded-[3px] font-medium uppercase tracking-wide border border-blue-300 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:border-blue-700 dark:text-blue-300`}
->
+
+                {/* Haggling Style Badge */}
+<Tooltip content={`Haggle DC: ${10 + getHagglingStyle(settlementSize, shopkeeper.priceModifier).dcModifier} (Base 10 ${getHagglingStyle(settlementSize, shopkeeper.priceModifier).dcModifier >= 0 ? '+' : ''}${getHagglingStyle(settlementSize, shopkeeper.priceModifier).dcModifier})`}>
   <span
-    className="material-symbols-outlined text-blue-500 dark:text-blue-400"
-    style={{ fontSize: "16px" }}
+    className={`inline-flex items-center gap-1 px-2 text-[0.65rem] px-[0.4rem] py-[0.15rem] rounded-[3px] font-medium uppercase tracking-wide border border-blue-300 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:border-blue-700 dark:text-blue-300`}
   >
-    handshake
+    <span
+      className="material-symbols-outlined text-blue-500 dark:text-blue-400"
+      style={{ fontSize: "16px" }}
+    >
+      handshake
+    </span>
+    <span className="font-medium">
+      {getHagglingStyle(settlementSize, shopkeeper.priceModifier).name}
+    </span>
   </span>
-
-  <span className="font-medium">
-  {getHagglingStyle(settlementSize, shopkeeper.priceModifier).name}
-</span>
-</span>
-                <span
-                  className={`inline-flex items-center gap-1 px-2 text-[0.65rem] px-[0.4rem] py-[0.15rem] rounded-[3px] font-medium uppercase tracking-wide border ${
-                    displayMood === "welcoming"
-                      ? "border-green-300 bg-green-100 text-green-700 dark:bg-green-900 dark:border-green-700 dark:text-green-300"
-                      : displayMood === "open"
-                      ? "border-emerald-300 bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:border-emerald-700 dark:text-emerald-300"
-                      : displayMood === "reserved"
-                      ? "border-stone-300 bg-stone-100 text-stone-700 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
-                      : displayMood === "doubtful"
-                      ? "border-amber-300 bg-amber-100 text-amber-700 dark:bg-amber-900 dark:border-amber-700 dark:text-amber-300"
-                      : "border-red-300 bg-red-100 text-red-700 dark:bg-red-900 dark:border-red-700 dark:text-red-300"
-                  }`}
-                >
-                  <span
-                    className={`material-symbols-outlined ${
-                      displayMood === "welcoming"
-                        ? "text-green-600 dark:text-green-400"
-                        : displayMood === "open"
-                        ? "text-emerald-600 dark:text-emerald-400"
-                        : displayMood === "reserved"
-                        ? "text-stone-600 dark:text-gray-400"
-                        : displayMood === "doubtful"
-                        ? "text-amber-600 dark:text-amber-400"
-                        : "text-red-600 dark:text-red-400"
-                    }`}
-                    style={{ fontSize: "16px" }}
-                  >
-                    {displayMood === "welcoming"
-                      ? "sentiment_very_satisfied"
-                      : displayMood === "open"
-                      ? "sentiment_satisfied"
-                      : displayMood === "reserved"
-                      ? "sentiment_neutral"
-                      : displayMood === "doubtful"
-                      ? "sentiment_dissatisfied"
-                      : "sentiment_very_dissatisfied"}
-                  </span>
-
-                  <span
-                    className={`font-medium ${
-                      displayMood === "welcoming" ||
-                      displayMood === "open"
-                        ? "text-green-600 dark:text-green-400"
-                        : displayMood === "reserved"
-                        ? "text-stone-600 dark:text-gray-00"
-                        : displayMood === "doubtful"
-                        ? "text-amber-600 dark:text-amber-400"
-                        : "text-red-600 dark:text-red-400"
-                    }`}
-                  >
-                    {displayMood === "welcoming"
-                      ? "Welcoming"
-                      : displayMood === "open"
-                      ? "Open"
-                      : displayMood === "reserved"
-                      ? "Reserved"
-                      : displayMood === "doubtful"
-                      ? "Doubtful"
-                      : "Dismissive"}
-                  </span>
-                </span>
+</Tooltip>
+                <Tooltip content={`${(() => {
+  switch(displayMood) {
+    case "welcoming": return "Very positive to haggling. Improved success chances and better reactions.";
+    case "open": return "Positive to haggling. Slightly better success chances.";
+    case "reserved": return "Neutral to haggling. Standard success chances.";
+    case "doubtful": return "Skeptical of haggling. Reduced success chances and harsher reactions.";
+    case "dismissive": return "Hostile to haggling. Much lower success chances and severe penalties.";
+    default: return "Affects haggling success and shopkeeper reactions.";
+  }
+})()}`}>
+  <span
+    className={`inline-flex items-center gap-1 px-2 text-[0.65rem] px-[0.4rem] py-[0.15rem] rounded-[3px] font-medium uppercase tracking-wide border ${
+      displayMood === "welcoming"
+        ? "border-green-300 bg-green-100 text-green-700 dark:bg-green-900 dark:border-green-700 dark:text-green-300"
+        : displayMood === "open"
+        ? "border-emerald-300 bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:border-emerald-700 dark:text-emerald-300"
+        : displayMood === "reserved"
+        ? "border-stone-300 bg-stone-100 text-stone-700 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
+        : displayMood === "doubtful"
+        ? "border-amber-300 bg-amber-100 text-amber-700 dark:bg-amber-900 dark:border-amber-700 dark:text-amber-300"
+        : "border-red-300 bg-red-100 text-red-700 dark:bg-red-900 dark:border-red-700 dark:text-red-300"
+    }`}
+  >
+    {/* Keep existing icon and text content exactly as is */}
+    <span
+      className={`material-symbols-outlined ${
+        displayMood === "welcoming"
+          ? "text-green-600 dark:text-green-400"
+          : displayMood === "open"
+          ? "text-emerald-600 dark:text-emerald-400"
+          : displayMood === "reserved"
+          ? "text-stone-600 dark:text-gray-400"
+          : displayMood === "doubtful"
+          ? "text-amber-600 dark:text-amber-400"
+          : "text-red-600 dark:text-red-400"
+      }`}
+      style={{ fontSize: "16px" }}
+    >
+      {displayMood === "welcoming"
+        ? "sentiment_very_satisfied"
+        : displayMood === "open"
+        ? "sentiment_satisfied"
+        : displayMood === "reserved"
+        ? "sentiment_neutral"
+        : displayMood === "doubtful"
+        ? "sentiment_dissatisfied"
+        : "sentiment_very_dissatisfied"}
+    </span>
+    <span
+      className={`font-medium ${
+        displayMood === "welcoming" || displayMood === "open"
+          ? "text-green-600 dark:text-green-400"
+          : displayMood === "reserved"
+          ? "text-stone-600 dark:text-gray-00"
+          : displayMood === "doubtful"
+          ? "text-amber-600 dark:text-amber-400"
+          : "text-red-600 dark:text-red-400"
+      }`}
+    >
+      {displayMood === "welcoming"
+        ? "Welcoming"
+        : displayMood === "open"
+        ? "Open"
+        : displayMood === "reserved"
+        ? "Reserved"
+        : displayMood === "doubtful"
+        ? "Doubtful"
+        : "Dismissive"}
+    </span>
+  </span>
+</Tooltip>
               </div>
 
               {/* Bottom line: Description */}
               <div>
                 <span className="text-stone-600 dark:text-gray-300 inter text-sm">
-  {isHaggleReaction ? (
-    // Show different content based on haggle result
-    displayMood === "doubtful" || displayMood === "dismissive" ? (
-      // Failed haggle: Show mood description + quote
-      <>
-        {shopkeeper.name.split(" ")[0]} {selectedMoodDesc}. 
-        <span className="italic"> "{currentHaggleQuote}"</span>
-      </>
-    ) : (
-      // Successful haggle: Show just the quote
-      <span className="italic">"{currentHaggleQuote}"</span>
-    )
-  ) : (
-    // Normal interaction: Show full description
-    <>
-      {shopkeeper.name.split(" ")[0]} {selectedMoodDesc}.
-      {" "}
-      <span className="capitalize">{pronouns.pronoun}</span>{" "}
-      {selectedPersonalityDesc}.
-    </>
-  )}
-</span>
+                  {isCartChangeReaction ? (
+                    // Show cart change reaction
+                    <>
+                      {shopkeeper.name.split(" ")[0]} {cartChangeDescription}.
+                      <span className="italic"> "{cartChangeQuote}"</span>
+                    </>
+                  ) : isHaggleReaction ? (
+                    // Show haggle reaction
+                    lastHaggleResult?.success ? (
+                      // Successful haggle: Show POST-HAGGLE SUCCESS reaction + quote
+                      <>
+                        {shopkeeper.name.split(" ")[0]}{" "}
+                        {(() => {
+                          const pronouns = getShopkeeperPronouns(
+                            shopkeeper.name
+                          );
+                          return getPostHaggleDescription(
+                            displayMood,
+                            pronouns
+                          );
+                        })()}
+                        .<span className="italic"> "{currentHaggleQuote}"</span>
+                      </>
+                    ) : (
+                      // Failed haggle: Show POST-HAGGLE FAILURE reaction + quote
+                      <>
+                        {shopkeeper.name.split(" ")[0]}{" "}
+                        {(() => {
+                          const pronouns = getShopkeeperPronouns(
+                            shopkeeper.name
+                          );
+                          return getProcessedPostHaggleFailureDescription(
+                            displayMood,
+                            pronouns
+                          );
+                        })()}
+                        .<span className="italic"> "{currentHaggleQuote}"</span>
+                      </>
+                    )
+                  ) : (
+                    // Normal interaction: Show full baseline description
+                    <>
+                      {shopkeeper.name.split(" ")[0]} {selectedMoodDesc}.{" "}
+                      <span className="capitalize">{pronouns.pronoun}</span>{" "}
+                      {selectedPersonalityDesc}.
+                    </>
+                  )}
+                </span>
               </div>
             </div>
           );
@@ -830,17 +973,18 @@ useEffect(() => {
       {/* Sale Details Section */}
       <div>
         {/* Search and Filter Controls */}
+        {/* Search and Filter Controls */}
         <div className="px-4 py-3 bg-stone-100 dark:bg-gray-700 border-t border-x rounded-t-lg border-stone-300 dark:border-gray-500">
-          <div className="flex items-center justify-end">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="flex items-center gap-2 flex-1">
               <input
                 type="text"
-                placeholder="Search items"
+                placeholder="Search Items"
                 value={itemSearchQuery}
                 onChange={(e) => setItemSearchQuery(e.target.value)}
-                className="bg-stone-50 dark:bg-gray-700 border border-stone-200 dark:border-gray-600
-                    text-stone-700 dark:text-gray-200 rounded-md px-3 py-1 text-sm
-                    focus:outline-none focus:border-stone-500 dark:focus:border-gray-400 transition-colors"
+                className="w-full bg-stone-50 dark:bg-gray-700 border border-stone-200 dark:border-gray-600
+            text-stone-700 dark:text-gray-200 rounded-md px-3 py-1 text-sm
+            focus:outline-none focus:border-stone-500 dark:focus:border-gray-400 transition-colors"
               />
               {itemSearchQuery && (
                 <button
@@ -855,12 +999,12 @@ useEffect(() => {
                   </span>
                 </button>
               )}
+            </div>
 
-              <span className="whitespace-nowrap text-sm text-stone-600 dark:text-gray-300">
-                sorted by
-              </span>
+            <div className="flex flex-wrap items-center gap-2 text-sm text-stone-600 dark:text-gray-300">
+              <span className="whitespace-nowrap">Show</span>
 
-              {/* Category Filter Dropdown */}
+              {/* Category Dropdown */}
               <div className="relative inline-block">
                 <button
                   onClick={() => {
@@ -869,18 +1013,15 @@ useEffect(() => {
                       !isCategoryFilterDropdownOpen
                     );
                   }}
-                  className="bg-stone-100 dark:bg-gray-700 border border-stone-400 dark:border-gray-600 text-stone-600 dark:text-gray-300 text-xs 
-                      font-medium inter uppercase tracking-wider rounded-md px-3 py-1 cursor-pointer 
-                      hover:bg-stone-200 dark:hover:bg-gray-600 focus:outline-none focus:border-stone-600 dark:focus:border-stone-400 focus:ring-2 focus:ring-stone-600/10 dark:focus:ring-stone-400/10 
-                      inline-flex items-center justify-between min-w-fit align-middle"
+                  className={buttonStyles.dropdown}
                 >
                   <span className="flex items-center">
                     <span className="material-symbols-outlined mr-1 leading-none">
-                      filter_list
+                      all_inclusive
                     </span>
                     {selectedItemCategory === "all"
                       ? "Any Category"
-                      : itemCategories[selectedItemCategory as string]?.name ||
+                      : itemCategories[selectedItemCategory]?.name ||
                         selectedItemCategory}
                   </span>
                   <span
@@ -964,6 +1105,81 @@ useEffect(() => {
                           </li>
                         );
                       })}
+                    </ul>
+                  </div>
+                )}
+              </div>
+              <span className="whitespace-nowrap">sorted by</span>
+
+              {/* Sort Dropdown */}
+              <div className="relative inline-block">
+                <button
+                  onClick={() => {
+                    closeAllDropdowns();
+                    setIsSortDropdownOpen(!isSortDropdownOpen);
+                  }}
+                  className={buttonStyles.dropdown}
+                >
+                  <span className="flex items-center">
+                    <span className="material-symbols-outlined mr-1 leading-none">
+                      sort
+                    </span>
+                    {itemSort === "alpha"
+                      ? "Alphabetical"
+                      : itemSort === "price-asc"
+                      ? "Price: Low to High"
+                      : "Price: High to Low"}
+                  </span>
+                  <span
+                    className="material-symbols-outlined ml-2 leading-none"
+                    style={{ fontSize: "16px" }}
+                  >
+                    {isSortDropdownOpen ? "expand_less" : "expand_more"}
+                  </span>
+                </button>
+
+                {isSortDropdownOpen && (
+                  <div className="dropdown-menu absolute z-10 mt-1 bg-stone-50 dark:bg-gray-700 border border-stone-300 dark:border-gray-600 rounded-lg shadow-lg">
+                    <ul className="py-0.5 text-xs text-stone-700 dark:text-gray-300">
+                      {[
+                        {
+                          value: "alpha",
+                          label: "Alphabetical",
+                          icon: "sort_by_alpha",
+                        },
+                        {
+                          value: "price-asc",
+                          label: "Price: Low to High",
+                          icon: "trending_up",
+                        },
+                        {
+                          value: "price-desc",
+                          label: "Price: High to Low",
+                          icon: "trending_down",
+                        },
+                      ].map((option) => (
+                        <li key={option.value}>
+                          <button
+                            onClick={() => {
+                              closeAllDropdowns();
+                              setItemSort(option.value);
+                              setIsSortDropdownOpen(false);
+                            }}
+                            className={`block w-full text-left px-3 py-1.5 hover:bg-stone-100 dark:hover:bg-gray-600 text-stone-600 dark:text-gray-300 font-medium inter uppercase tracking-wider ${
+                              itemSort === option.value
+                                ? "bg-stone-100 dark:bg-gray-600"
+                                : ""
+                            }`}
+                          >
+                            <span className="flex items-center">
+                              <span className="material-symbols-outlined shop-icon text-stone-400 mr-1">
+                                {option.icon}
+                              </span>
+                              {option.label}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
                     </ul>
                   </div>
                 )}
@@ -1162,17 +1378,16 @@ useEffect(() => {
 
                         {/* Remove Button */}
                         <button
-                          onClick={() => removeItemFromSell(item.name)}
-                          className="flex items-center gap-1 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300
-                     text-xs px-1 py-1 rounded transition-all duration-200 font-medium"
-                        >
-                          <span
-                            className="material-symbols-outlined"
-                            style={{ fontSize: "24px" }}
-                          >
-                            delete
-                          </span>
-                        </button>
+  onClick={() => removeItemFromSell(item.name)}
+  className={buttonStyles.danger}
+>
+  <span
+    className="material-symbols-outlined"
+    style={{ fontSize: "24px" }}
+  >
+    delete
+  </span>
+</button>
                       </div>
                     </div>
                   ))}
@@ -1427,7 +1642,7 @@ useEffect(() => {
                           <span className="text-sm text-stone-500 dark:text-gray-300">
                             Shop Treasury After Sale
                           </span>
-                          <span className="text-sm text-stone-500 dark:text-gray-300"></span>
+                          <span className="flex items-center text-sm text-stone-500 dark:text-gray-300"></span>
                           <div
                             className={`till-amount font-medium ${(() => {
                               if (sellingItems.length === 0 || isLockedOut) {
@@ -1435,14 +1650,59 @@ useEffect(() => {
                               }
                               const saleTotal = calculateSaleTotal();
                               const shopMoney = calculateShopTotalMoney();
-                              return saleTotal > shopMoney
+                              const remainingAfterSale = shopMoney - saleTotal;
+                              return remainingAfterSale < 0
                                 ? "text-red-600 dark:text-red-400"
                                 : "text-green-600 dark:text-green-400";
                             })()}`}
-                            dangerouslySetInnerHTML={{
-                              __html: shopkeeper?.availableMoney || "",
-                            }}
-                          ></div>
+                          >
+                            {(() => {
+                              if (sellingItems.length === 0 || isLockedOut) {
+                                return (
+                                  <span
+                                    dangerouslySetInnerHTML={{
+                                      __html: shopkeeper?.availableMoney || "",
+                                    }}
+                                  />
+                                );
+                              }
+
+                              const saleTotal = calculateSaleTotal();
+                              const shopMoney = calculateShopTotalMoney();
+                              const remainingAfterSale = shopMoney - saleTotal;
+
+                              if (remainingAfterSale < 0) {
+                                const absoluteValue =
+                                  Math.abs(remainingAfterSale);
+                                const formattedPositive =
+                                  formatCurrency(absoluteValue);
+
+                                // Insert the minus sign after the icons but before the numbers
+                                // Format should be: [icons]-123 instead of -[icons]123
+                                const withMinusSign = formattedPositive.replace(
+                                  /(\d+)/, // Find the first number
+                                  "-$1" // Replace it with -number
+                                );
+
+                                return (
+                                  <span
+                                    dangerouslySetInnerHTML={{
+                                      __html: withMinusSign,
+                                    }}
+                                  />
+                                );
+                              } else {
+                                return (
+                                  <span
+                                    dangerouslySetInnerHTML={{
+                                      __html:
+                                        formatCurrency(remainingAfterSale),
+                                    }}
+                                  />
+                                );
+                              }
+                            })()}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1458,76 +1718,68 @@ useEffect(() => {
           <div className="flex gap-4 mt-4">
             {/* Complete Sale Button */}
             <button
-              onClick={executeSale}
-              disabled={(() => {
-                if (sellingItems.length === 0 || isLockedOut) return true;
-                const saleTotal = calculateSaleTotal();
-                const shopMoney = calculateShopTotalMoney();
-                return saleTotal > shopMoney;
-              })()}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 
-                      bg-green-200 dark:bg-green-800 border border-green-400 dark:border-green-600 
-                      hover:bg-green-300 dark:hover:bg-green-700 hover:border-green-500 dark:hover:border-green-500
-                      disabled:bg-stone-300 dark:disabled:bg-gray-600 disabled:border-stone-400 dark:disabled:border-gray-500
-                      text-green-800 dark:text-green-200 disabled:text-stone-500 dark:disabled:text-gray-400 
-                     text-xs font-medium inter uppercase tracking-wider rounded-md px-3 py-1 cursor-pointer transition-all duration-200 disabled:cursor-not-allowed
-                      shadow-sm hover:shadow-md disabled:shadow-none"
-            >
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: "18px" }}
-              >
-                {(() => {
-                  if (isLockedOut) return "block";
-                  if (sellingItems.length === 0) return "block";
-                  const saleTotal = calculateSaleTotal();
-                  const shopMoney = calculateShopTotalMoney();
-                  if (saleTotal > shopMoney) return "money_off";
-                  return "sell";
-                })()}
-              </span>
-              {(() => {
-                if (isLockedOut) return "Selling Locked";
-                if (sellingItems.length === 0) return "Complete Sale";
-                const saleTotal = calculateSaleTotal();
-                const shopMoney = calculateShopTotalMoney();
-                if (saleTotal > shopMoney) return "Insufficient Funds";
-                return "Complete Sale";
-              })()}
-            </button>
+  onClick={executeSale}
+  disabled={(() => {
+    if (sellingItems.length === 0 || isLockedOut) return true;
+    const saleTotal = calculateSaleTotal();
+    const shopMoney = calculateShopTotalMoney();
+    return saleTotal > shopMoney;
+  })()}
+  className={`${buttonStyles.sale} flex-1`}
+>
+  <span
+    className="material-symbols-outlined"
+    style={{ fontSize: "18px" }}
+  >
+    {(() => {
+      if (isLockedOut) return "block";
+      if (sellingItems.length === 0) return "block";
+      const saleTotal = calculateSaleTotal();
+      const shopMoney = calculateShopTotalMoney();
+      if (saleTotal > shopMoney) return "money_off";
+      return "sell";
+    })()}
+  </span>
+  {(() => {
+    if (isLockedOut) return "Selling Locked";
+    if (sellingItems.length === 0) return "Complete Sale";
+    const saleTotal = calculateSaleTotal();
+    const shopMoney = calculateShopTotalMoney();
+    if (saleTotal > shopMoney) return "Insufficient Funds";
+    return "Complete Sale";
+  })()}
+</button>
 
             {/* Haggle Button */}
-            <button
-              onClick={attemptHaggle}
-              disabled={
-                sellingItems.length === 0 ||
-                haggleAttempts <= 0 ||
-                isHaggling ||
-                isLockedOut
-              }
-              className={`flex-none flex items-center justify-center gap-2 px-4 py-3 
-                    ${
-                      isLockedOut
-                        ? "bg-red-100 dark:bg-red-700 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400"
-                        : "bg-stone-100 dark:bg-gray-700 border border-stone-400 dark:border-gray-600 text-stone-400 dark:text-gray-200"
-                    }
-                    bg-stone-100 dark:bg-gray-700 border border-stone-400 dark:border-gray-600 text-stone-600 dark:text-gray-300 text-xs 
-                      font-medium inter uppercase tracking-wider rounded-md px-3 py-1 cursor-pointer 
-                      hover:bg-stone-200 dark:hover:bg-gray-600 focus:outline-none focus:border-stone-600 dark:focus:border-stone-400 focus:ring-2 focus:ring-stone-600/10 dark:focus:ring-stone-400/10 transition-all duration-200 disabled:cursor-not-allowed
-                    shadow-sm hover:shadow-md disabled:shadow-none ${
-                      isHaggling ? "animate-pulse" : ""
-                    }`}
-            >
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: "18px" }}
-              >
-                {isLockedOut ? "block" : "handshake"}
-              </span>
-              {isLockedOut
-                ? "Relations Damaged"
-                : `Haggle (${haggleAttempts} left)`}
-            </button>
+            {/* Replace the existing Haggle button with: */}
+<button
+  onClick={attemptHaggle}
+  disabled={
+    sellingItems.length === 0 ||
+    haggleAttempts <= 0 ||
+    isHaggling ||
+    isLockedOut ||
+    calculateSaleTotal() > calculateShopTotalMoney()
+  }
+  className={`${buttonStyles.primary} flex-none ${isHaggling ? "animate-pulse" : ""}`}
+>
+  <span
+    className="material-symbols-outlined"
+    style={{ fontSize: "18px" }}
+  >
+    {(() => {
+      if (isLockedOut) return "block";
+      if (calculateSaleTotal() > calculateShopTotalMoney()) return "cancel";
+      return "handshake";
+    })()}
+  </span>
+  {(() => {
+    if (isLockedOut) return "Relations Damaged";
+    if (sellingItems.length === 0) return "No Items to Haggle";
+    if (calculateSaleTotal() > calculateShopTotalMoney()) return "Cannot Haggle";
+    return `Haggle (${haggleAttempts} left)`;
+  })()}
+</button>
           </div>
         )}
       </div>

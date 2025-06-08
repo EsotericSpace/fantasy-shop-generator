@@ -4,6 +4,7 @@ import SellingSection from "./components/sellingSection";
 import ShopkeeperCard from "./components/shopkeeperCard";
 import InventorySection from "./components/inventorySection";
 import TitleCard from "./components/titleCard";
+import { buttonStyles } from './styles/buttonStyles'
 import { useShopkeeper } from "./hooks/useShopkeeper";
 import {
   femaleNames,
@@ -24,7 +25,7 @@ import {
   shopNouns,
   namingPatterns,
 } from "./data/shopNaming";
-import { shopItems, commonItems, rareItems } from "./data/shopItems.ts";
+import { shopItems, getCommonItems, getRareItems } from "./data/shopItems.ts";
 import { itemCategories } from "./data/itemCategories";
 import { texturalDetails, interiors, setting } from "./data/shopDescriptions";
 import {
@@ -128,8 +129,8 @@ function ShopkeeperGenerator() {
   const [fadeRare, setFadeRare] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isRaceDropdownOpen, setIsRaceDropdownOpen] = useState(false);
-  const [isSettlementDropdownOpen, setIsSettlementDropdownOpen] =
-    useState(false);
+  const [isSettlementDropdownOpen, setIsSettlementDropdownOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('inventory'); // 'inventory' or 'selling'
   const [isShopTypeDropdownOpen, setIsShopTypeDropdownOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("any");
   const [inventorySort, setInventorySort] = useState("alpha");
@@ -1119,7 +1120,7 @@ setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
         {
           interior: shopkeeper.shopDescriptionParts.interior,
           texture: shopkeeper.shopDescriptionParts.texture,
-          // Don't pass location, let it generate a new one for the new settlement
+          
         }
       );
 
@@ -1135,7 +1136,7 @@ setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
         },
       });
     }
-  }, [settlementSize]);
+  }, [settlementSize, shopkeeper?.shopType]);
 
   // Effect to close dropdowns when clicking outside
   useEffect(() => {
@@ -1224,28 +1225,68 @@ setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
             generateShopDescription={generateShopDescription}
             generateMotto={generateMotto}
           />
-          <InventorySection
-            shopkeeper={shopkeeper}
-            settlementSize={settlementSize}
-            isDarkMode={isDarkMode}
-            closeAllDropdowns={closeAllDropdowns}
-            setShopkeeper={setShopkeeper}
-            isCategoryDropdownOpen={isCategoryDropdownOpen}
-            setIsCategoryDropdownOpen={setIsCategoryDropdownOpen}
-            isSortDropdownOpen={isSortDropdownOpen}
-            setIsSortDropdownOpen={setIsSortDropdownOpen}
-          />
-          <SellingSection
-            shopkeeper={shopkeeper}
-            settlementSize={settlementSize}
-            closeAllDropdowns={closeAllDropdowns}
-            updateShopkeeper={setShopkeeper}
-            isCategoryFilterDropdownOpen={isCategoryFilterDropdownOpen}
-            setIsCategoryFilterDropdownOpen={setIsCategoryFilterDropdownOpen}
-            isCharismaDropdownOpen={isCharismaDropdownOpen}
-            setIsCharismaDropdownOpen={setIsCharismaDropdownOpen}
-            getHagglingStyle={getHagglingStyle}
-          />
+
+{/* Tab Navigation */}
+<div className="shopkeeper-card rounded-t-md border-b border-stone-300 shadow-md pt-6 px-6 !pb-0 mb-6 mb-0 bg-stone-100 dark:bg-gray-700 overflow-hidden">
+  <div className="flex gap-4">
+    <button
+  onClick={() => setActiveTab('inventory')}
+  className={`${buttonStyles.tab} ${
+    activeTab === 'inventory'
+      ? 'text-stone-700 dark:text-gray-200 border-b-2 border-stone-400 dark:border-gray-300'
+      : 'text-stone-500 dark:text-gray-400 hover:text-stone-700 dark:hover:text-gray-200'
+  }`}
+>
+      <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>
+        inventory_2
+      </span>
+      Shop Inventory
+    </button>
+    
+    <button
+      onClick={() => setActiveTab('selling')}
+      className={`${buttonStyles.tab} ${
+    activeTab === 'selling'
+      ? 'dark:text-gray-200 border-b-2 border-stone-400 dark:border-gray-300'
+      : 'text-stone-500 dark:text-gray-400 hover:text-stone-700 dark:hover:text-gray-200'
+  }`}
+>
+      <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>
+        sell
+      </span>
+      Sell to Shop
+    </button>
+  </div>
+</div>
+
+          {/* Conditional Content */}
+{activeTab === 'inventory' && (
+  <InventorySection
+    shopkeeper={shopkeeper}
+    settlementSize={settlementSize}
+    isDarkMode={isDarkMode}
+    closeAllDropdowns={closeAllDropdowns}
+    setShopkeeper={setShopkeeper}
+    isCategoryDropdownOpen={isCategoryDropdownOpen}
+    setIsCategoryDropdownOpen={setIsCategoryDropdownOpen}
+    isSortDropdownOpen={isSortDropdownOpen}
+    setIsSortDropdownOpen={setIsSortDropdownOpen}
+  />
+)}
+
+{activeTab === 'selling' && (
+  <SellingSection
+    shopkeeper={shopkeeper}
+    settlementSize={settlementSize}
+    closeAllDropdowns={closeAllDropdowns}
+    updateShopkeeper={setShopkeeper}  // ← Changed to setShopkeeper
+    isCategoryFilterDropdownOpen={isCategoryFilterDropdownOpen}
+    setIsCategoryFilterDropdownOpen={setIsCategoryFilterDropdownOpen}
+    isCharismaDropdownOpen={isCharismaDropdownOpen}
+    setIsCharismaDropdownOpen={setIsCharismaDropdownOpen}
+    getHagglingStyle={getHagglingStyle}
+  />
+)}
         </>
       )}
     </div>

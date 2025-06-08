@@ -1,6 +1,8 @@
 // components/InventorySection.tsx
 import React, { useState } from "react";
+import { buttonStyles } from "../styles/buttonStyles";
 import { itemCategories } from "../data/itemCategories";
+import { shopItems, normalizeShopType } from "../data/shopItems";
 import {
   sortItems,
   getCategoryForItem,
@@ -27,6 +29,7 @@ interface InventorySectionProps {
   setShopkeeper: (shopkeeper: any) => void;
   isCategoryDropdownOpen: boolean;
   setIsCategoryDropdownOpen: (open: boolean) => void;
+  isSortDropdownOpen: boolean;
   setIsSortDropdownOpen: (open: boolean) => void;
 }
 
@@ -48,53 +51,81 @@ const InventorySection: React.FC<InventorySectionProps> = ({
 
   if (!shopkeeper) return null;
 
-  // Function to regenerate common items
-  const regenerateCommonItems = () => {
-    setFadeCommon(true);
+// Function to regenerate BOTH common and rare items at once
+const regenerateAllItems = () => {
+  console.log("=== regenerateAllItems Debug ===");
+  console.log("regenerateAllItems called");
+  console.log("shopkeeper.shopType:", shopkeeper.shopType);
+  console.log("settlementSize:", settlementSize);
+  
+  setFadeCommon(true);
+  setFadeRare(true);
 
-    // Get inventory limits based on settlement size
-    const limits = getInventoryLimits(settlementSize);
+  const limits = getInventoryLimits(settlementSize);
+  console.log("Inventory limits:", limits);
+  
+  // Normalize the shop type to ensure it matches our data
+  const normalizedShopType = normalizeShopType(shopkeeper.shopType);
+  console.log("Normalized shop type:", normalizedShopType);
+  
+  const newCommonItems = generateCommonItems(
+    normalizedShopType,
+    shopkeeper.priceModifier,
+    limits
+  );
 
-    // Generate new common items
-    const newCommonItems = generateCommonItems(
-      shopkeeper.shopType,
-      shopkeeper.priceModifier,
-      limits
-    );
+  const newRareItems = generateRareItems(
+    normalizedShopType,
+    shopkeeper.priceModifier,
+    limits
+  );
 
-    // Update shopkeeper state
-    setTimeout(() => {
-      setShopkeeper({
-        ...shopkeeper,
-        commonItems: newCommonItems,
-      });
-      setFadeCommon(false);
-    }, 300);
-  };
+  console.log("New common items:", newCommonItems.length);
+  console.log("New rare items:", newRareItems.length);
+  console.log("=== End regenerateAllItems Debug ===");
+  
+  // Update both at the same time - NO RACE CONDITION
+  setShopkeeper({
+    ...shopkeeper,
+    commonItems: newCommonItems,
+    rareItems: newRareItems,
+  });
+  
+  // Reset fade states
+  setTimeout(() => {
+    setFadeCommon(false);
+    setFadeRare(false);
+  }, 300);
+};
 
-  // Function to regenerate rare items
-  const regenerateRareItems = () => {
-    setFadeRare(true);
+// Separate functions for individual regeneration (if needed elsewhere)
+const regenerateCommonItems = () => {
+  setFadeCommon(true);
+  const limits = getInventoryLimits(settlementSize);
+  const normalizedShopType = normalizeShopType(shopkeeper.shopType);
+  const newCommonItems = generateCommonItems(normalizedShopType, shopkeeper.priceModifier, limits);
+  
+  setShopkeeper(prev => ({
+    ...prev,
+    commonItems: newCommonItems,
+  }));
+  
+  setTimeout(() => setFadeCommon(false), 300);
+};
 
-    // Get inventory limits based on settlement size
-    const limits = getInventoryLimits(settlementSize);
-
-    // Generate new rare items
-    const newRareItems = generateRareItems(
-      shopkeeper.shopType,
-      shopkeeper.priceModifier,
-      limits
-    );
-
-    // Update shopkeeper state
-    setTimeout(() => {
-      setShopkeeper({
-        ...shopkeeper,
-        rareItems: newRareItems,
-      });
-      setFadeRare(false);
-    }, 300);
-  };
+const regenerateRareItems = () => {
+  setFadeRare(true);
+  const limits = getInventoryLimits(settlementSize);
+  const normalizedShopType = normalizeShopType(shopkeeper.shopType);
+  const newRareItems = generateRareItems(normalizedShopType, shopkeeper.priceModifier, limits);
+  
+  setShopkeeper(prev => ({
+    ...prev,
+    rareItems: newRareItems,
+  }));
+  
+  setTimeout(() => setFadeRare(false), 300);
+};
 
   const getAvailableCategories = (): string[] => {
     const combined = [...shopkeeper.commonItems, ...shopkeeper.rareItems];
@@ -129,19 +160,17 @@ const InventorySection: React.FC<InventorySectionProps> = ({
   };
 
   return (
-    <div className="shopkeeper-card rounded-md shadow-md p-6 mb-6 bg-stone-100 dark:bg-gray-700">
+    <div className="shopkeeper-card rounded-b-md shadow-md !pt-8 mb-6 bg-stone-100 dark:bg-gray-700">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
         <div className="flex items-center gap-2">
-          <h3 className="text-lg font-semibold text-stone-600 dark:text-gray-300 cinzel shopkeeper-name m-0 leading-none">
-            Shop Inventory
-          </h3>
           <button
             onClick={() => {
+              console.log("Button clicked!"); // Add this line
               closeAllDropdowns();
               regenerateCommonItems();
               regenerateRareItems();
             }}
-            className="text-stone-500 dark:text-gray-300 hover:text-stone-700 transition-colors flex items-center"
+            className={`${buttonStyles.dropdown} gap-2`}
             title="Regenerate all inventory"
           >
             <span
@@ -150,6 +179,7 @@ const InventorySection: React.FC<InventorySectionProps> = ({
             >
               refresh
             </span>
+            Re-roll Items
           </button>
         </div>
 
@@ -163,10 +193,7 @@ const InventorySection: React.FC<InventorySectionProps> = ({
                 closeAllDropdowns();
                 setIsCategoryDropdownOpen(!isCategoryDropdownOpen);
               }}
-              className="bg-stone-100 dark:bg-gray-700 border border-stone-400 dark:border-gray-600 text-stone-600 dark:text-gray-300 text-xs 
-              font-medium inter uppercase tracking-wider rounded-md px-3 py-1 cursor-pointer 
-              hover:bg-stone-200 dark:hover:bg-gray-600 focus:outline-none focus:border-stone-600 dark:focus:border-stone-400 focus:ring-2 focus:ring-stone-600/10 dark:focus:ring-stone-400/10 
-              inline-flex items-center justify-between min-w-fit align-middle"
+              className={buttonStyles.dropdown}
             >
               <span className="flex items-center">
                 <span className="material-symbols-outlined mr-1 leading-none">
@@ -261,15 +288,15 @@ const InventorySection: React.FC<InventorySectionProps> = ({
           {/* Sort Dropdown */}
           <div className="relative inline-block">
             <button
-              onClick={() => {
-                closeAllDropdowns();
-                setIsSortDropdownOpen(!isSortDropdownOpen);
-              }}
-              className="bg-stone-100 dark:bg-gray-700 border border-stone-400 dark:border-gray-600 text-stone-600 dark:text-gray-300 text-xs 
-              font-medium inter uppercase tracking-wider rounded-md px-3 py-1 cursor-pointer 
-              hover:bg-stone-200 dark:hover:bg-gray-600 focus:outline-none focus:border-stone-600 dark:focus:border-stone-400 focus:ring-2 focus:ring-stone-600/10 dark:focus:ring-stone-400/10 
-              inline-flex items-center justify-between min-w-fit align-middle"
-            >
+  onClick={() => {
+    console.log("Sort button clicked!"); // Add this line
+    console.log("Current isSortDropdownOpen:", isSortDropdownOpen); // Add this line
+    console.log("isSortDropdownOpen state:", isSortDropdownOpen);
+    closeAllDropdowns();
+    setIsSortDropdownOpen(!isSortDropdownOpen);
+  }}
+  className={buttonStyles.dropdown}
+>
               <span className="flex items-center">
                 <span className="material-symbols-outlined mr-1 leading-none">
                   sort

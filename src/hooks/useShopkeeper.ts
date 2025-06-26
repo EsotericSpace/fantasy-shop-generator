@@ -8,7 +8,6 @@ import {
   generateShopDescription,
   generateMotto,
   generateShopkeeperMoney,
-  getShopkeeperPronouns,
   getShopRefinement,
   applyNameAndPronouns,
   generateShopkeeperDescriptionWithTemplate,

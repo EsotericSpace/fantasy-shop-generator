@@ -2,32 +2,18 @@
 import React, { useState, useEffect } from "react";
 import ShopItemsList from "../components/shopItemsList";
 import { buttonStyles } from "../styles/buttonStyles";
-import Tooltip from "../components/tooltip";
-import { SellingCart, SellingItem, HaggleResult } from "./shoppingCart";
-import ShopkeeperMoodDisplay, { 
-  moodScale, 
-  applyCharismaMoodModifier, 
-  setMoodWithCharisma 
-} from "./shopkeeperMoodDisplay";
-
-
-
+import { SellingCart, SellingItem } from "./shoppingCart";
+import ShopkeeperMoodDisplay from "./shopkeeperMoodDisplay";
 import {
-  sortItems,
-  getCategoryForItem,
-} from "../utils/helpers";
-
-import {
-  parsePriceToGold,
   formatCurrency,
-  getShopkeeperBuyRate,
 } from "../utils/pricing";
 
-import { getShopkeeperPronouns } from "../utils/shopGeneration";
 
 import { itemCategories } from "../data/itemCategories";
 
 import { shopItems } from "../data/shopItems";
+import { getCategoryForItem } from "../helpers/getCategoryForItem";
+import { sortItems } from "../helpers/sortItems";
 
 const PhosphorIcon = ({ icon: Icon, weight = "thin", size = 20, ...props }) => (
   <Icon weight={weight} size={size} {...props} />

@@ -10,26 +10,20 @@ import { buttonStyles } from "../styles/buttonStyles";
 
 import { itemCategories } from "../data/itemCategories";
 
-import { shopItems, normalizeShopType } from "../data/shopItems";
+import { normalizeShopType } from "../data/shopItems";
 import { PurchaseRecord } from "./shoppingCart";
 import ShopkeeperMoodDisplay from "./shopkeeperMoodDisplay";
 
 import { formatCurrency } from "../utils/pricing";
 
-import {
-  sortItems,
-  getCategoryForItem,
-  getIconForItem,
-  getIconComponent,
-  getRarityBadgeClass,
-  getRarityColors,
-} from "../utils/helpers";
 
 import {
   getInventoryLimits,
   generateCommonItems,
   generateRareItems,
 } from "../utils/shopGeneration";
+import { getCategoryForItem } from "../helpers/getCategoryForItem";
+import { sortItems } from "../helpers/sortItems";
 
 const PhosphorIcon = ({ icon: Icon, weight = "thin", size = 20, ...props }) => (
   <Icon weight={weight} size={size} {...props} />

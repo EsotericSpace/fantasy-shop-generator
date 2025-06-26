@@ -1,6 +1,7 @@
 // components/TitleCard.tsx
 import React from "react";
 import { buttonStyles } from "../styles/buttonStyles";
+import { DARK_MODE_KEY } from "../consts/localStorage";
 
 interface TitleCardProps {
   isDarkMode: boolean;
@@ -31,6 +32,11 @@ const TitleCard: React.FC<TitleCardProps> = ({
     setCurrentHaggleQuote("");
   };
 
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode)
+    localStorage.setItem(DARK_MODE_KEY, (!isDarkMode).toString())
+  }
+
   return (
     <div className="shopkeeper-card rounded-md shadow-md p-6 mb-6 bg-stone-100 dark:bg-gray-700">
       {/* Header with title and randomize button */}
@@ -43,7 +49,7 @@ const TitleCard: React.FC<TitleCardProps> = ({
         <div className="flex items-center gap-2">
           {/* Dark Mode Toggle */}
           <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
+            onClick={() => toggleDarkMode()}
             className={`${buttonStyles.dropdown} gap-2`}
             title={
               isDarkMode ? "Switch to light mode" : "Switch to dark mode"

@@ -10,7 +10,7 @@ import { buttonStyles } from "../styles/buttonStyles";
 
 import { itemCategories } from "../data/itemCategories";
 
-import { shopItems, normalizeShopType } from "../data/shopItems";
+import { normalizeShopType } from "../data/shopItems";
 import { PurchaseRecord } from "./shoppingCart";
 import ShopkeeperMoodDisplay from "./shopkeeperMoodDisplay";
 
@@ -19,10 +19,6 @@ import { formatCurrency } from "../utils/pricing";
 import {
   sortItems,
   getCategoryForItem,
-  getIconForItem,
-  getIconComponent,
-  getRarityBadgeClass,
-  getRarityColors,
 } from "../utils/helpers";
 
 import {

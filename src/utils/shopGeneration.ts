@@ -3,9 +3,6 @@
 // Import data dependencies
 import {
   femaleNames,
-  races,
-  firstNames,
-  lastNames,
   raceNamingStyles,
 } from "../data/names";
 import { getCommonItems, getRareItems } from "../data/shopItems";
@@ -22,7 +19,7 @@ import {
   shopNouns,
   namingPatterns,
 } from "../data/shopNaming";
-import { shopTypes, pricingStyles, rarityRank } from "../data/constants";
+import { rarityRank } from "../data/constants";
 
 // Import utility dependencies
 import { adjustPrice, generateShopkeeperMoney } from "./pricing";

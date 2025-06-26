@@ -2,54 +2,22 @@ import React, { useState, useEffect } from "react";
 import "./styles/ShopkeeperApp.css";
 import SellingSection from "./components/sellingSection";
 import ShopkeeperCard from "./components/shopkeeperCard";
-import { ShoppingCart, CartItem, PurchaseRecord } from './components/shoppingCart';
+import { CartItem, PurchaseRecord } from './components/shoppingCart';
 import InventorySection from "./components/inventorySection";
 import TitleCard from "./components/titleCard";
 import { buttonStyles } from './styles/buttonStyles'
 import { useShopkeeper } from "./hooks/useShopkeeper";
-import {
-  femaleNames,
-  races,
-  firstNames,
-  lastNames,
-  raceNamingStyles,
-} from "./data/names";
-import {
-  shopkeeperIntroductions,
-  shopkeeperBehaviors,
-  shopkeeperMottos,
-} from "./data/shopkeeperPersonality";
-import {
-  shopkeeperTitles,
-  settlementDescriptors,
-  shopAdjectives,
-  shopNouns,
-  namingPatterns,
-} from "./data/shopNaming";
-import { shopItems, getCommonItems, getRareItems } from "./data/shopItems.ts";
-import { itemCategories } from "./data/itemCategories";
-import { texturalDetails, interiors, setting } from "./data/shopDescriptions";
-import {
-  shopTypes,
-  pricingStyles,
-  shopIcons,
-  rarityRank,
-} from "./data/constants";
+import { shopItems } from "./data/shopItems.ts";
 import {
   parsePriceToGold,
   formatCurrency,
-  adjustPrice,
   calculateBuyPrice,
   getShopkeeperBuyRate,
-  generateShopkeeperMoney,
 } from "./utils/pricing";
 import {
   getShopkeeperPronouns,
   getShopRefinement,
-  applyNameAndPronouns,
-  generateShopkeeperDescriptionWithTemplate,
   generateMotto,
-  generateShopName,
   generateShopDescription,
   getInventoryLimits,
   generateCommonItems,
@@ -58,36 +26,11 @@ import {
 import {
   sortItems,
   getCategoryForItem,
-  getIconForItem,
-  getIconComponent,
-  getItemsInCategory,
-  getCategoryStats,
-  getRarityBadgeClass,
-  getRarityColors,
-  getSettlementData,
-  highlightPricing,
 } from "./utils/helpers";
 
 import {
   getShopkeeperDescriptions,
-  getPostHaggleDescription,
-  getProcessedPostHaggleFailureDescription,
-  getCartChangeReaction,
-  getHaggleQuote,
-  getHaggleResultType,
 } from "./data/shopkeeperSellingDetails";
-
-import {
-  CastleTurretIcon,
-  FarmIcon,
-  HouseLineIcon,
-  LockKeyIcon,
-  LockKeyOpenIcon,
-} from "@phosphor-icons/react";
-
-const PhosphorIcon = ({ icon: Icon, weight = "thin", size = 20, ...props }) => (
-  <Icon weight={weight} size={size} {...props} />
-);
 
 const getHagglingStyle = (settlementSize, priceModifier) => {
   const hagglingStyles = {

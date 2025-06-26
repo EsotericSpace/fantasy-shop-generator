@@ -4,7 +4,6 @@
 import { itemCategories } from "../data/itemCategories";
 import { parsePriceToGold } from "./pricing";
 import {
-  HorseIcon,
   CastleTurretIcon,
   FarmIcon,
   HouseLineIcon,

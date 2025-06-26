@@ -12,7 +12,7 @@ import { itemCategories } from "../data/itemCategories";
 
 import { shopItems, normalizeShopType } from "../data/shopItems";
 import { PurchaseRecord } from "./shoppingCart";
-import ShopkeeperMoodDisplay from "./ShopkeeperMoodDisplay";
+import ShopkeeperMoodDisplay from "./shopkeeperMoodDisplay";
 
 import { formatCurrency } from "../utils/pricing";
 
@@ -675,7 +675,7 @@ const InventorySection: React.FC<InventorySectionProps> = ({
                   <span
                     className="text-sm font-medium text-stone-600 dark:text-gray-200"
                     dangerouslySetInnerHTML={{
-                      __html: formatCurrency(purchase.totalValue),
+                      __html: formatCurrency(purchase.finalTotal),
                     }}
                   ></span>
 

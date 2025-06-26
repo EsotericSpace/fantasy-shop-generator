@@ -8,7 +8,7 @@ import ShopkeeperMoodDisplay, {
   moodScale, 
   applyCharismaMoodModifier, 
   setMoodWithCharisma 
-} from "./ShopkeeperMoodDisplay";
+} from "./shopkeeperMoodDisplay";
 
 
 

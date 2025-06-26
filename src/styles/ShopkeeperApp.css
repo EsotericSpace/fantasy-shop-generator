@@ -227,6 +227,17 @@ button[class*="border-none"]:active {
   box-shadow: none !important;
 }
 
+/* Remove arrows for all number inputs */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+
 /* Card styling */
 .shopkeeper-card {
   background-color: #f8f7f5;

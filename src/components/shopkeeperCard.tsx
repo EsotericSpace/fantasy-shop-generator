@@ -4,7 +4,6 @@ import { buttonStyles } from "../styles/buttonStyles";
 import { shopTypes, pricingStyles, shopIcons } from "../data/constants";
 import { races } from "../data/names";
 import { getShopkeeperPronouns } from "../utils/shopGeneration";
-import { getSettlementData } from "../utils/helpers";
 import { LockKeyIcon, LockKeyOpenIcon } from "@phosphor-icons/react";
 import { 
   getInventoryLimits,
@@ -13,6 +12,7 @@ import {
 } from "../utils/shopGeneration";
 import { normalizeShopType } from "../data/shopItems";
 import { adjustPrice } from "../utils/pricing";
+import { getSettlementData } from "../helpers/getSettlementData";
 
 
 const PhosphorIcon = ({ icon: Icon, weight = "thin", size = 20, ...props }) => (

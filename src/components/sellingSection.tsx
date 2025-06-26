@@ -4,14 +4,6 @@ import ShopItemsList from "../components/shopItemsList";
 import { buttonStyles } from "../styles/buttonStyles";
 import { SellingCart, SellingItem } from "./shoppingCart";
 import ShopkeeperMoodDisplay from "./shopkeeperMoodDisplay";
-
-
-
-import {
-  sortItems,
-  getCategoryForItem,
-} from "../utils/helpers";
-
 import {
   formatCurrency,
 } from "../utils/pricing";
@@ -20,6 +12,8 @@ import {
 import { itemCategories } from "../data/itemCategories";
 
 import { shopItems } from "../data/shopItems";
+import { getCategoryForItem } from "../helpers/getCategoryForItem";
+import { sortItems } from "../helpers/sortItems";
 
 const PhosphorIcon = ({ icon: Icon, weight = "thin", size = 20, ...props }) => (
   <Icon weight={weight} size={size} {...props} />

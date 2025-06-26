@@ -1,7 +1,9 @@
 // components/ShopItemsList.tsx
 import React from "react";
-import { getIconForItem, getIconComponent, getRarityBadgeClass } from "../utils/helpers";
 import { formatCurrency, parsePriceToGold } from "../utils/pricing";
+import { getIconForItem } from "../helpers/getIconForItem";
+import { getIconComponent } from "../helpers/getIconComponent";
+import { getRarityBadgeClass } from "../helpers/getRarityBadgeClass";
 
 // PhosphorIcon component
 const PhosphorIcon = ({ icon: Icon, weight = "thin", size = 20, ...props }) => (

@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import "./styles/ShopkeeperApp.css";
 import SellingSection from "./components/sellingSection";
 import ShopkeeperCard from "./components/shopkeeperCard";
-import { CartItem, PurchaseRecord } from './components/shoppingCart';
+import { CartItem, PurchaseRecord } from "./components/shoppingCart";
 import InventorySection from "./components/inventorySection";
 import TitleCard from "./components/titleCard";
-import { buttonStyles } from './styles/buttonStyles'
+import { buttonStyles } from "./styles/buttonStyles";
 import { useShopkeeper } from "./hooks/useShopkeeper";
 import { shopItems } from "./data/shopItems.ts";
 import {
@@ -23,45 +23,14 @@ import {
   generateCommonItems,
   generateRareItems,
 } from "./utils/shopGeneration";
-import {
-  sortItems,
-  getCategoryForItem,
-} from "./utils/helpers";
 
-import {
-  getShopkeeperDescriptions,
-} from "./data/shopkeeperSellingDetails";
-
-const getHagglingStyle = (settlementSize, priceModifier) => {
-  const hagglingStyles = {
-    village: {
-      generous: { name: "Generous Trader", dcModifier: -2 },
-      standard: { name: "Friendly Negotiator", dcModifier: -1 },
-      stingy: { name: "Careful Dealer", dcModifier: 0 }
-    },
-    town: {
-      generous: { name: "Fair Dealer", dcModifier: -1 },
-      standard: { name: "Reasonable Negotiator", dcModifier: 0 },
-      stingy: { name: "Firm Negotiator", dcModifier: +1 }
-    },
-    city: {
-      generous: { name: "Accommodating Merchant", dcModifier: 0 },
-      standard: { name: "Shrewd Negotiator", dcModifier: +1 },
-      stingy: { name: "Tough Negotiator", dcModifier: +2 }
-    }
-  };
-
-  const refinement = priceModifier > 0.1 ? "stingy" : 
-                    priceModifier < -0.1 ? "generous" : "standard";
-                    
-  return hagglingStyles[settlementSize]?.[refinement] || 
-         hagglingStyles.town.standard;
-};
+import { getShopkeeperDescriptions } from "./data/shopkeeperSellingDetails";
+import { getHagglingStyle } from "./helpers/getHagglingStyle.ts";
+import { getDisplayMood } from "./helpers/getDisplayMood.ts";
 
 function ShopkeeperGenerator() {
   const {
     shopkeeper,
-    shopType,
     settlementSize,
     selectedPricingStyle,
     isLocked,
@@ -78,15 +47,12 @@ function ShopkeeperGenerator() {
     replaceRefinementTitle,
   } = useShopkeeper();
 
-  const [fadeCommon, setFadeCommon] = useState(false);
-  const [fadeRare, setFadeRare] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isRaceDropdownOpen, setIsRaceDropdownOpen] = useState(false);
-  const [isSettlementDropdownOpen, setIsSettlementDropdownOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('inventory'); // 'inventory' or 'selling'
+  const [isSettlementDropdownOpen, setIsSettlementDropdownOpen] =
+    useState(false);
+  const [activeTab, setActiveTab] = useState("inventory"); // 'inventory' or 'selling'
   const [isShopTypeDropdownOpen, setIsShopTypeDropdownOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState("any");
-  const [inventorySort, setInventorySort] = useState("alpha");
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -98,7 +64,7 @@ function ShopkeeperGenerator() {
   const [buyingLastHaggleResult, setBuyingLastHaggleResult] = useState(null);
   const [buyingIsHaggling, setBuyingIsHaggling] = useState(false);
   const [recentPurchases, setRecentPurchases] = useState<PurchaseRecord[]>([]);
-  
+
   // Selling system state
 
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -130,17 +96,15 @@ function ShopkeeperGenerator() {
   const [hasHaggled, setHasHaggled] = useState(false);
   const [lastHaggleWasSuccessful, setLastHaggleWasSuccessful] = useState(null);
 
-
   const [isCategoryFilterDropdownOpen, setIsCategoryFilterDropdownOpen] =
     useState(false);
 
   // Selling system functions
-
   const calculateApologyFee = () => {
     if (!shopkeeper || sellingItems.length === 0) return 0;
 
     // Base fee by settlement size
-    let baseFee;
+    let baseFee = 50;
     switch (settlementSize) {
       case "village":
         baseFee = Math.floor(Math.random() * 26) + 25; // 25-50 gold
@@ -151,8 +115,6 @@ function ShopkeeperGenerator() {
       case "city":
         baseFee = Math.floor(Math.random() * 26) + 75; // 75-100 gold
         break;
-      default:
-        baseFee = 50;
     }
 
     // Personality modifiers
@@ -181,144 +143,61 @@ function ShopkeeperGenerator() {
   };
 
   // Add cart management functions
-const addToCart = (item: any) => {
-  setCartItems(prev => {
-    const existing = prev.find(cartItem => cartItem.name === item.name);
-    if (existing) {
-      return prev.map(cartItem =>
-        cartItem.name === item.name
-          ? { ...cartItem, quantity: cartItem.quantity + 1 }
-          : cartItem
-      );
-    } else {
-      return [...prev, {
-        name: item.name,
-        quantity: 1,
-        level: item.level || "Common",
-        price: item.price,
-        adjustedPrice: item.adjustedPrice || item.price,
-        basePrice: item.basePrice || item.price,
-        details: item.details
-      }];
-    }
-  });
-};
-
-const updateCartQuantity = (itemName: string, newQuantity: number) => {
-  if (newQuantity <= 0) {
-    removeFromCart(itemName);
-    return;
-  }
-  setCartItems(prev =>
-    prev.map(item =>
-      item.name === itemName ? { ...item, quantity: newQuantity } : item
-    )
-  );
-};
-
-const removeFromCart = (itemName: string) => {
-  setCartItems(prev => prev.filter(item => item.name !== itemName));
-};
-
-const clearCart = () => {
-  setCartItems([]);
-};
-
-const completePurchase = () => {
-  const total = cartItems.reduce((sum, item) => {
-    const price = parsePriceToGold(item.adjustedPrice || item.price);
-    return sum + (price * item.quantity);
-  }, 0);
-  
-  if (playerMoney >= total) {
-    setPlayerMoney(prev => prev - total);
-    clearCart();
-  }
-};
-
-const enhancedCompletePurchase = () => {
-  const originalTotal = cartItems.reduce((sum, item) => {
-    const price = parsePriceToGold(item.adjustedPrice || item.price);
-    return sum + (price * item.quantity);
-  }, 0);
-
-  const finalTotal = cartItems.reduce((total, item) => {
-    const basePrice = parsePriceToGold(item.adjustedPrice || item.price);
-    const charismaMultiplier = 1 - (playerCharisma * 0.05);
-    const haggleMultiplier = 1 - ((item.haggleBonus || 0) / 100);
-    const finalPrice = Math.max(basePrice * 0.1, basePrice * charismaMultiplier * haggleMultiplier);
-    return total + (finalPrice * item.quantity);
-  }, 0);
-  
-  if (playerMoney >= finalTotal) {
-    // ✅ Create properly typed purchase record:
-    const purchaseRecord: PurchaseRecord = {
-      id: Date.now(),
-      items: [...cartItems],
-      originalTotal,
-      finalTotal,
-      charismaDiscount: playerCharisma * 5,
-      haggleDiscount: cartItems.reduce((sum, item) => 
-        sum + (item.haggleBonus || 0), 0
-      ) / (cartItems.length || 1),
-      timestamp: new Date()
-    };
-
-    setPlayerMoney(prev => prev - finalTotal);
-    setRecentPurchases(prev => [purchaseRecord, ...prev.slice(0, 4)]);
-    clearCart();
-    
-    // Reset haggling
-    setBuyingHaggleAttempts(3);
-    const hagglingStyle = getHagglingStyle(settlementSize, shopkeeper.priceModifier);
-    setBuyingCurrentHaggleDC(10 + hagglingStyle.dcModifier);
-    setBuyingLastHaggleResult(null);
-  }
-};
-
-const getDisplayMood = (baseMood: string, charisma: number): string => {
-  const moodScale = ["dismissive", "doubtful", "reserved", "open", "welcoming"];
-  const currentIndex = moodScale.indexOf(baseMood);
-  if (currentIndex === -1) return baseMood;
-
-  let modifier = 0;
-  if (charisma >= 3) modifier = Math.floor((charisma - 1) / 2);
-  else if (charisma <= -3) modifier = Math.ceil((charisma + 1) / 2);
-
-  const newIndex = Math.max(
-    0,
-    Math.min(moodScale.length - 1, currentIndex + modifier)
-  );
-  return moodScale[newIndex];
-};
-
-  const getRelationshipIcon = () => {
-    switch (relationshipStatus) {
-      case "trusted":
-        return "favorite";
-      case "neutral":
-        return "sentiment_neutral";
-      case "annoyed":
-        return "sentiment_dissatisfied";
-      case "offended":
-        return "sentiment_very_dissatisfied";
-      default:
-        return "sentiment_neutral";
-    }
+  const addToCart = (item: any) => {
+    setCartItems((prev) => {
+      const existing = prev.find((cartItem) => cartItem.name === item.name);
+      if (existing) {
+        return prev.map((cartItem) =>
+          cartItem.name === item.name
+            ? { ...cartItem, quantity: cartItem.quantity + 1 }
+            : cartItem
+        );
+      } else {
+        return [
+          ...prev,
+          {
+            name: item.name,
+            quantity: 1,
+            level: item.level || "Common",
+            price: item.price,
+            adjustedPrice: item.adjustedPrice || item.price,
+            basePrice: item.basePrice || item.price,
+            details: item.details,
+          },
+        ];
+      }
+    });
   };
 
-  const getRelationshipColor = () => {
-    switch (relationshipStatus) {
-      case "trusted":
-        return "text-green-500 dark:text-green-400";
-      case "neutral":
-        return "text-stone-500 dark:text-gray-400";
-      case "annoyed":
-        return "text-amber-500 dark:text-amber-400";
-      case "offended":
-        return "text-red-500 dark:text-red-400";
-      default:
-        return "text-stone-500 dark:text-gray-400";
+  const updateCartQuantity = (itemName: string, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      removeFromCart(itemName);
+      return;
+    }
+    setCartItems((prev) =>
+      prev.map((item) =>
+        item.name === itemName ? { ...item, quantity: newQuantity } : item
+      )
+    );
+  };
+
+  const removeFromCart = (itemName: string) => {
+    setCartItems((prev) => prev.filter((item) => item.name !== itemName));
+  };
+
+  const clearCart = () => {
+    setCartItems([]);
+  };
+
+  const completePurchase = () => {
+    const total = cartItems.reduce((sum, item) => {
+      const price = parsePriceToGold(item.adjustedPrice || item.price);
+      return sum + price * item.quantity;
+    }, 0);
+
+    if (playerMoney >= total) {
+      setPlayerMoney((prev) => prev - total);
+      clearCart();
     }
   };
 
@@ -340,7 +219,10 @@ const getDisplayMood = (baseMood: string, charisma: number): string => {
     setShopkeeperMood("neutral");
     setLockoutReason("");
     setHaggleAttempts(3);
-    const hagglingStyle = getHagglingStyle(settlementSize, shopkeeper.priceModifier);
+    const hagglingStyle = getHagglingStyle(
+      settlementSize,
+      shopkeeper.priceModifier
+    );
     setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
     setLastHaggleResult(null);
     setHasTriedCharismaCheck(false); // Reset charisma check
@@ -353,32 +235,24 @@ const getDisplayMood = (baseMood: string, charisma: number): string => {
     const roll = rollD20();
     const total = roll + playerCharisma;
     const success = total >= 15;
+    const reducedFee = Math.round(apologyFee / 2);
 
-    if (success) {
-      const reducedFee = Math.round(apologyFee / 2);
-      setApologyFee(reducedFee);
-      setLastHaggleResult({
-        roll,
-        total,
-        dc: 15,
-        success: true,
-        bonusPercent: 0,
-        resultText: `Charisma check successful! ${
-          shopkeeper.name.split(" ")[0]
-        } reduces the fee to ${reducedFee} gold.`,
-      });
-    } else {
-      setLastHaggleResult({
-        roll,
-        total,
-        dc: 15,
-        success: false,
-        bonusPercent: 0,
-        resultText: `Charisma check failed. ${
-          shopkeeper.name.split(" ")[0]
-        } is unmoved by your pleas.`,
-      });
-    }
+    if (success) setApologyFee(reducedFee);
+
+    setLastHaggleResult({
+      roll,
+      total,
+      dc: 15,
+      success,
+      bonusPercent: 0,
+      resultText: success
+        ? `Charisma check successful! ${
+            shopkeeper.name.split(" ")[0]
+          } reduces the fee to ${reducedFee} gold.`
+        : `Charisma check failed. ${
+            shopkeeper.name.split(" ")[0]
+          } is unmoved by your pleas.`,
+    });
   };
 
   const attemptBuyingHaggle = () => {
@@ -399,7 +273,8 @@ const getDisplayMood = (baseMood: string, charisma: number): string => {
     } else if (roll === 1) {
       // Critical failure - shopkeeper increases prices
       bonusPercent = -15;
-      resultText = "Terrible haggling! Shopkeeper is offended and raises prices!";
+      resultText =
+        "Terrible haggling! Shopkeeper is offended and raises prices!";
     } else if (success) {
       const successMargin = total - buyingCurrentHaggleDC;
       bonusPercent = Math.floor(successMargin * 2) + 5; // 5-25% discount
@@ -410,10 +285,10 @@ const getDisplayMood = (baseMood: string, charisma: number): string => {
     }
 
     // Apply bonus/penalty to all cart items
-    setCartItems(prev =>
-      prev.map(item => ({
+    setCartItems((prev) =>
+      prev.map((item) => ({
         ...item,
-        haggleBonus: (item.haggleBonus || 0) + bonusPercent
+        haggleBonus: (item.haggleBonus || 0) + bonusPercent,
       }))
     );
 
@@ -423,60 +298,39 @@ const getDisplayMood = (baseMood: string, charisma: number): string => {
       dc: buyingCurrentHaggleDC,
       success,
       bonusPercent,
-      resultText
+      resultText,
     });
 
-    setBuyingHaggleAttempts(prev => prev - 1);
-    setBuyingCurrentHaggleDC(prev => prev + 2);
+    setBuyingHaggleAttempts((prev) => prev - 1);
+    setBuyingCurrentHaggleDC((prev) => prev + 2);
     setBuyingIsHaggling(false);
   };
 
   const resetHaggleState = () => {
-  const hadHaggling = hasHaggled;
-  const wasSuccessful = lastHaggleWasSuccessful;
+    const hadHaggling = hasHaggled;
 
-  if (hadHaggling && sellingItems.length > 0) {
-    const pronouns = getShopkeeperPronouns(shopkeeper.name);
-    // You'll need to import getCartChangeReaction from shopkeeperSellingDetails
-    
-    setIsCartChangeReaction(true);
-    setTimeout(() => {
-      setIsCartChangeReaction(false);
-      setCartChangeDescription("");
-      setCartChangeQuote("");
-    }, 4000);
-  }
+    if (hadHaggling && sellingItems.length > 0) {
+      // You'll need to import getCartChangeReaction from shopkeeperSellingDetails
 
-  setHaggleAttempts(3);
-  const hagglingStyle = getHagglingStyle(settlementSize, shopkeeper.priceModifier);
-  setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
-  setLastHaggleResult(null);
-  setIsHaggleReaction(false);
-  setCurrentHaggleQuote("");
-  setHasHaggled(false);
-  setLastHaggleWasSuccessful(null);
-};
+      setIsCartChangeReaction(true);
+      setTimeout(() => {
+        setIsCartChangeReaction(false);
+        setCartChangeDescription("");
+        setCartChangeQuote("");
+      }, 4000);
+    }
 
-useEffect(() => {
-  if (cartItems.length > 0) {
-    setCartItems(prev => 
-      prev.map(item => ({
-        ...item,
-        charismaBonus: playerCharisma * 5 // Update charisma bonus
-      }))
+    setHaggleAttempts(3);
+    const hagglingStyle = getHagglingStyle(
+      settlementSize,
+      shopkeeper.priceModifier
     );
-  }
-}, [playerCharisma]);
-
-  // Helper function to get all possible items for current shop type
-  const getAllShopItems = () => {
-    if (!shopkeeper) return [];
-
-    const shopTypeItems = shopItems[shopkeeper.shopType] || [];
-    return shopTypeItems.map((item) => ({
-      ...item,
-      basePrice: item.price,
-    }));
+    setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
+    setLastHaggleResult(null);
+    setIsHaggleReaction(false);
+    setCurrentHaggleQuote("");
+    setHasHaggled(false);
+    setLastHaggleWasSuccessful(null);
   };
 
   // Helper function to get the original market price for any item
@@ -491,75 +345,75 @@ useEffect(() => {
 
   // In ShopkeeperApp.tsx, replace your addItemToSell function with this debug version:
 
-const addItemToSell = (item) => {
-  console.log('🔍 ShopkeeperApp addItemToSell called with:', item);
-  console.log('🔍 Current sellingItems before update:', sellingItems);
-  console.log('🔍 sellingItems length before:', sellingItems.length);
+  const addItemToSell = (item) => {
+    console.log("🔍 ShopkeeperApp addItemToSell called with:", item);
+    console.log("🔍 Current sellingItems before update:", sellingItems);
+    console.log("🔍 sellingItems length before:", sellingItems.length);
 
-  setSellingItems((prev) => {
-    console.log('🔍 setSellingItems called, prev:', prev);
-    console.log('🔍 prev length:', prev.length);
-    
-    const existing = prev.find((selling) => selling.name === item.name);
-    console.log('🔍 existing item found:', existing);
-    
-    if (existing) {
-      const updated = prev.map((selling) =>
-        selling.name === item.name
-          ? { ...selling, quantity: selling.quantity + 1 }
-          : selling
-      );
-      console.log('🔍 returning updated array (existing item):', updated);
-      return updated;
-    } else {
-      // New item! Possibly improve mood
-      if (shopkeeperMood === "irritated" && Math.random() > 0.5) {
-        setShopkeeperMood("skeptical");
-      } else if (shopkeeperMood === "skeptical" && Math.random() > 0.7) {
-        setShopkeeperMood("neutral");
+    setSellingItems((prev) => {
+      console.log("🔍 setSellingItems called, prev:", prev);
+      console.log("🔍 prev length:", prev.length);
+
+      const existing = prev.find((selling) => selling.name === item.name);
+      console.log("🔍 existing item found:", existing);
+
+      if (existing) {
+        const updated = prev.map((selling) =>
+          selling.name === item.name
+            ? { ...selling, quantity: selling.quantity + 1 }
+            : selling
+        );
+        console.log("🔍 returning updated array (existing item):", updated);
+        return updated;
+      } else {
+        // New item! Possibly improve mood
+        if (shopkeeperMood === "irritated" && Math.random() > 0.5) {
+          setShopkeeperMood("skeptical");
+        } else if (shopkeeperMood === "skeptical" && Math.random() > 0.7) {
+          setShopkeeperMood("neutral");
+        }
+
+        // Always use true market price for display and calculations
+        let marketPrice = item.price; // Start with item.price as default
+
+        // First: try the basePrice from the item (should be the original market price)
+        if (item.basePrice && item.basePrice !== item.adjustedPrice) {
+          marketPrice = item.basePrice;
+        }
+
+        // Second: look up in the original database
+        if (!marketPrice) {
+          marketPrice = getMarketPrice(item.name) || item.price;
+        }
+
+        // Last resort: use item.price but this might be wrong
+        if (!marketPrice) {
+          marketPrice = item.price;
+        }
+
+        const itemGoldValue = parsePriceToGold(marketPrice);
+
+        const newItem = {
+          ...item,
+          quantity: 1,
+          level: item.level || "Common",
+          marketPrice: marketPrice, // Display this in cart
+          marketValue: itemGoldValue, // Use this for calculations
+          shopkeeperPrice: item.adjustedPrice || item.price, // What the shopkeeper sells it for
+        };
+
+        console.log("🔍 creating new item:", newItem);
+
+        const newArray = [...prev, newItem];
+        console.log("🔍 returning new array (new item):", newArray);
+        console.log("🔍 new array length:", newArray.length);
+
+        return newArray;
       }
+    });
 
-      // Always use true market price for display and calculations
-      let marketPrice = item.price; // Start with item.price as default
-
-      // First: try the basePrice from the item (should be the original market price)
-      if (item.basePrice && item.basePrice !== item.adjustedPrice) {
-        marketPrice = item.basePrice;
-      }
-
-      // Second: look up in the original database
-      if (!marketPrice) {
-        marketPrice = getMarketPrice(item.name) || item.price;
-      }
-
-      // Last resort: use item.price but this might be wrong
-      if (!marketPrice) {
-        marketPrice = item.price;
-      }
-
-      const itemGoldValue = parsePriceToGold(marketPrice);
-
-      const newItem = {
-        ...item,
-        quantity: 1,
-        level: item.level || "Common",
-        marketPrice: marketPrice, // Display this in cart
-        marketValue: itemGoldValue, // Use this for calculations
-        shopkeeperPrice: item.adjustedPrice || item.price, // What the shopkeeper sells it for
-      };
-
-      console.log('🔍 creating new item:', newItem);
-      
-      const newArray = [...prev, newItem];
-      console.log('🔍 returning new array (new item):', newArray);
-      console.log('🔍 new array length:', newArray.length);
-      
-      return newArray;
-    }
-  });
-  
-  console.log('🔍 setSellingItems call completed');
-};
+    console.log("🔍 setSellingItems call completed");
+  };
 
   const removeItemFromSell = (itemName) => {
     setSellingItems((prev) => prev.filter((item) => item.name !== itemName));
@@ -615,11 +469,6 @@ const addItemToSell = (item) => {
       return;
     }
 
-    const personality = getShopkeeperPersonality(
-      shopkeeper.shopType,
-      shopkeeper.priceModifier
-    );
-
     let bonusPercent = 0;
     let resultText = "";
     let newMood = shopkeeperMood;
@@ -663,10 +512,7 @@ const addItemToSell = (item) => {
         resultText = `Decent argument. ${
           shopkeeper.name.split(" ")[0]
         } considers your point.`;
-        if (
-          shopkeeperMood === "neutral" ||
-          shopkeeperMood === "satisfied" ||
-          shopkeeperMood === "pleased"
+        if (['neutral', 'satisfied', 'pleased'].includes(shopkeeperMood)
         ) {
           newMood = shopkeeperMood;
         } else {
@@ -772,8 +618,11 @@ const addItemToSell = (item) => {
 
     setSellingItems([]);
     setHaggleAttempts(3);
-    const hagglingStyle = getHagglingStyle(settlementSize, shopkeeper.priceModifier);
-setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
+    const hagglingStyle = getHagglingStyle(
+      settlementSize,
+      shopkeeper.priceModifier
+    );
+    setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
     setLastHaggleResult(null);
   };
 
@@ -888,260 +737,6 @@ setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
     }));
   };
 
-  const getShopkeeperPersonality = (shopType, priceModifier) => {
-    const refinement = getShopRefinement(priceModifier);
-
-    const personalities = {
-      alchemist: {
-        refined: {
-          mood: "analytical",
-          hagglingStyle: "methodical",
-          suspicion: "low",
-        },
-        humble: {
-          mood: "enthusiastic",
-          hagglingStyle: "eager",
-          suspicion: "medium",
-        },
-        standard: {
-          mood: "practical",
-          hagglingStyle: "reasonable",
-          suspicion: "low",
-        },
-      },
-      blacksmith: {
-        refined: {
-          mood: "professional",
-          hagglingStyle: "firm",
-          suspicion: "low",
-        },
-        humble: {
-          mood: "friendly",
-          hagglingStyle: "flexible",
-          suspicion: "medium",
-        },
-        standard: {
-          mood: "straightforward",
-          hagglingStyle: "honest",
-          suspicion: "low",
-        },
-      },
-      "general store": {
-        refined: {
-          mood: "courteous",
-          hagglingStyle: "polished",
-          suspicion: "medium",
-        },
-        humble: {
-          mood: "welcoming",
-          hagglingStyle: "generous",
-          suspicion: "low",
-        },
-        standard: { mood: "helpful", hagglingStyle: "fair", suspicion: "low" },
-      },
-      "mystic goods": {
-        refined: {
-          mood: "mysterious",
-          hagglingStyle: "cryptic",
-          suspicion: "high",
-        },
-        humble: {
-          mood: "curious",
-          hagglingStyle: "intuitive",
-          suspicion: "medium",
-        },
-        standard: {
-          mood: "wise",
-          hagglingStyle: "balanced",
-          suspicion: "medium",
-        },
-      },
-      "exotic goods": {
-        refined: {
-          mood: "sophisticated",
-          hagglingStyle: "worldly",
-          suspicion: "high",
-        },
-        humble: {
-          mood: "adventurous",
-          hagglingStyle: "spontaneous",
-          suspicion: "low",
-        },
-        standard: {
-          mood: "experienced",
-          hagglingStyle: "shrewd",
-          suspicion: "medium",
-        },
-      },
-      jeweler: {
-        refined: {
-          mood: "discerning",
-          hagglingStyle: "exacting",
-          suspicion: "high",
-        },
-        humble: {
-          mood: "passionate",
-          hagglingStyle: "emotional",
-          suspicion: "low",
-        },
-        standard: {
-          mood: "careful",
-          hagglingStyle: "precise",
-          suspicion: "medium",
-        },
-      },
-    };
-
-    const shopTypeNorm = shopType.toLowerCase();
-    return (
-      personalities[shopTypeNorm]?.[refinement] ||
-      personalities["general store"][refinement]
-    );
-  };
-
-  // Filter items based on search query and category
-  const getFilteredItems = () => {
-    let items = getAllShopItems();
-
-    // Filter by search query
-    if (itemSearchQuery) {
-      items = items.filter(
-        (item) =>
-          item.name.toLowerCase().includes(itemSearchQuery.toLowerCase()) ||
-          item.details?.toLowerCase().includes(itemSearchQuery.toLowerCase())
-      );
-    }
-
-    // Filter by category
-    if (selectedItemCategory !== "all") {
-      items = items.filter((item) => {
-        const categoryInfo = getCategoryForItem(item.name);
-        return categoryInfo.category === selectedItemCategory;
-      });
-    }
-
-    // Remove already added items
-    items = items.filter(
-      (item) => !sellingItems.find((selling) => selling.name === item.name)
-    );
-
-    return items.sort((a, b) => a.name.localeCompare(b.name));
-  };
-
-  // Combine and filter inventory
-  const getCombinedInventory = () => {
-    if (!shopkeeper) return [];
-
-    const combined = [
-      ...shopkeeper.commonItems.map((item) => ({ ...item, type: "common" })),
-      ...shopkeeper.rareItems.map((item) => ({ ...item, type: "rare" })),
-    ];
-
-    // Filter by category
-    const filtered =
-      selectedCategory === "any"
-        ? combined
-        : combined.filter((item) => {
-            const categoryInfo = getCategoryForItem(item.name);
-            return categoryInfo.category === selectedCategory;
-          });
-
-    // Sort the filtered results
-    return sortItems(filtered, inventorySort);
-  };
-
-  // Get sorted items
-  // Get sorted items
-  const [commonSort, setCommonSort] = useState("alpha");
-  const [rareSort, setRareSort] = useState("alpha");
-  const sortedCommon = shopkeeper
-    ? sortItems(shopkeeper.commonItems, commonSort)
-    : [];
-  const sortedRare = shopkeeper
-    ? sortItems(shopkeeper.rareItems, rareSort)
-    : [];
-
-  // Function to regenerate common items
-  const regenerateCommonItems = () => {
-    if (!shopkeeper) return;
-
-    setFadeCommon(true);
-
-    // Get inventory limits based on settlement size
-    const limits = getInventoryLimits(settlementSize);
-
-    // Generate new common items
-    const newCommonItems = generateCommonItems(
-      shopkeeper.shopType,
-      shopkeeper.priceModifier,
-      limits
-    );
-
-    // Update shopkeeper state
-    setTimeout(() => {
-      setShopkeeper({
-        ...shopkeeper,
-        commonItems: newCommonItems,
-      });
-      setFadeCommon(false);
-    }, 300);
-  };
-
-  // Function to regenerate rare items
-  const regenerateRareItems = () => {
-    if (!shopkeeper) return;
-
-    setFadeRare(true);
-
-    // Get inventory limits based on settlement size
-    const limits = getInventoryLimits(settlementSize);
-
-    // Generate new rare items
-    const newRareItems = generateRareItems(
-      shopkeeper.shopType,
-      shopkeeper.priceModifier,
-      limits
-    );
-
-    // Update shopkeeper state
-    setTimeout(() => {
-      setShopkeeper({
-        ...shopkeeper,
-        rareItems: newRareItems,
-      });
-      setFadeRare(false);
-    }, 300);
-  };
-
-  const handleWalkAwayLocked = () => {
-    setSellingItems([]);
-    // Keep lockout active - this is the key difference
-    // setIsLockedOut(false); // DON'T reset this
-    setApologyFee(apologyFee); // Keep the fee
-    setRelationshipStatus("offended"); // Relationship stays damaged
-    setShopkeeperMood("irritated");
-    setIsHaggleReaction(true);
-    setLockoutReason(
-      `${
-        shopkeeper.name.split(" ")[0]
-      } refuses to do business until you pay the apology fee.`
-    );
-    setHaggleAttempts(3);
-    const hagglingStyle = getHagglingStyle(settlementSize, shopkeeper.priceModifier);
-setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
-    setHasTriedCharismaCheck(false); // Reset for next time
-    setLastHaggleResult({
-      roll: 0,
-      total: 0,
-      dc: 0,
-      success: false,
-      bonusPercent: 0,
-      resultText: `You left without resolving the situation. ${
-        shopkeeper.name.split(" ")[0]
-      } will not do business with you until you pay the apology fee.`,
-    });
-  };
-
   // Helper function to close all dropdowns
   const closeAllDropdowns = () => {
     setIsDropdownOpen(false);
@@ -1154,223 +749,114 @@ setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
     setIsCharismaDropdownOpen(false);
   };
 
-  // Add these back to your main file:
-  const getUniqueCategories = () => {
-    const categories = new Set();
-    getAllShopItems().forEach((item) => {
-      const categoryInfo = getCategoryForItem(item.name);
-      categories.add(categoryInfo.category);
-    });
-    return Array.from(categories).sort();
-  };
-
-  const getAvailableCategories = () => {
-    if (!shopkeeper) return [];
-
-    const combined = [...shopkeeper.commonItems, ...shopkeeper.rareItems];
-
-    const categories = new Set<string>();
-    combined.forEach((item) => {
-      const categoryInfo = getCategoryForItem(item.name);
-      categories.add(categoryInfo.category);
-    });
-
-    return Array.from(categories).sort();
-  };
-
   // Lock shopkeeper toggle
   const [lockedShopkeeperIdentity, setLockedShopkeeperIdentity] =
     useState(null);
 
-  const SellItemDisplay = ({ item, shopkeeper }) => {
-    const marketValue = item.marketValue || parsePriceToGold(item.basePrice);
-    const shopkeeperPrice = parsePriceToGold(
-      item.shopkeeperPrice || item.adjustedPrice
-    );
-    const sellPrice = item.sellPrice * item.quantity;
-    const sellRate = (item.sellPrice / marketValue) * 100;
-
-    return (
-      <div className="selling-item bg-stone-50 dark:bg-gray-600 rounded-lg p-3 space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="font-medium">
-            {item.name} ×{item.quantity}
-          </span>
-          <span
-            className="font-medium"
-            dangerouslySetInnerHTML={{ __html: formatCurrency(sellPrice) }}
-          ></span>
-        </div>
-
-        <div className="text-xs text-stone-600 dark:text-gray-300 space-y-1">
-          <div className="flex justify-between">
-            <span>Market value:</span>
-            <span
-              dangerouslySetInnerHTML={{ __html: formatCurrency(marketValue) }}
-            ></span>
-          </div>
-          <div className="flex justify-between">
-            <span>{shopkeeper.name.split(" ")[0]} sells for:</span>
-            <span
-              dangerouslySetInnerHTML={{
-                __html: formatCurrency(shopkeeperPrice),
-              }}
-            ></span>
-          </div>
-          <div className="flex justify-between">
-            <span>{shopkeeper.name.split(" ")[0]} buys for:</span>
-            <span className="font-medium">
-              {sellRate.toFixed(0)}% of market ({formatCurrency(item.sellPrice)}
-              )
-            </span>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const debugPricing = (item, shopkeeper) => {
-    console.log("=== SELLING PRICE DEBUG ===");
-    console.log("Item name:", item.name);
-    console.log("Item.price:", item.price);
-    console.log("Item.basePrice:", item.basePrice);
-    console.log("Item.adjustedPrice:", item.adjustedPrice);
-    console.log("Shopkeeper priceModifier:", shopkeeper.priceModifier);
-
-    const parsedPrice = parsePriceToGold(item.price);
-    const parsedBasePrice = parsePriceToGold(item.basePrice || item.price);
-
-    console.log("Parsed item.price as gold:", parsedPrice);
-    console.log("Parsed base price as gold:", parsedBasePrice);
-
-    const buyRate = getShopkeeperBuyRate(
-      shopkeeper.priceModifier,
-      settlementSize
-    );
-    console.log("Shopkeeper buy rate:", buyRate);
-
-    const sellPrice = calculateBuyPrice(parsedPrice, buyRate, 0);
-    const sellPriceFromBase = calculateBuyPrice(parsedBasePrice, buyRate, 0);
-
-    console.log("Sell price from item.price:", sellPrice);
-    console.log("Sell price from base price:", sellPriceFromBase);
-    console.log("========================");
-  };
-
-  // Effect to generate random shop on initial load
   useEffect(() => {
-    const sizes = ["village", "town", "city"];
-    const randomSize = sizes[Math.floor(Math.random() * sizes.length)];
-    setSettlementSize(randomSize);
-    setSelectedPricingStyle("random");
-    generateShopkeeper("random", randomSize, "random");
-  }, []);
+    if (!shopkeeper) return;
 
-  // Add this useEffect to handle the dark class on the document
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-      document.body.classList.add("dark");
-      // Force a repaint
-      document.documentElement.style.colorScheme = "dark";
+    const moodRoll = Math.random();
+    let baseMood = "reserved";
+
+    if (shopkeeper.priceModifier > 0.15) {
+      baseMood =
+        moodRoll > 0.7 ? "reserved" : moodRoll > 0.4 ? "doubtful" : "open";
+    } else if (shopkeeper.priceModifier < -0.15) {
+      baseMood =
+        moodRoll > 0.5 ? "open" : moodRoll > 0.2 ? "welcoming" : "reserved";
     } else {
-      document.documentElement.classList.remove("dark");
-      document.body.classList.remove("dark");
-      document.documentElement.style.colorScheme = "light";
+      baseMood =
+        moodRoll > 0.6 ? "open" : moodRoll > 0.2 ? "reserved" : "welcoming";
     }
 
-    // Debug logging
-    console.log("Dark mode applied:", isDarkMode);
-    console.log("HTML classes:", document.documentElement.className);
-  }, [isDarkMode]);
+    const applyCharismaMoodModifier = (baseMood, charisma) => {
+      const moodScale = [
+        "dismissive",
+        "doubtful",
+        "reserved",
+        "open",
+        "welcoming",
+      ];
+      const currentIndex = moodScale.indexOf(baseMood);
+      if (currentIndex === -1) return baseMood;
+
+      let modifier = 0;
+      if (charisma >= 3) {
+        modifier = Math.floor((charisma - 2) / 2);
+      } else if (charisma <= -3) {
+        modifier = Math.ceil((charisma + 2) / 2);
+      }
+
+      const newIndex = Math.max(
+        0,
+        Math.min(moodScale.length - 1, currentIndex + modifier)
+      );
+      return moodScale[newIndex];
+    };
+
+    const finalMood = applyCharismaMoodModifier(baseMood, playerCharisma);
+    setShopkeeperMood(finalMood);
+    setIsHaggleReaction(false);
+  }, [shopkeeper, playerCharisma]);
 
   useEffect(() => {
-  if (!shopkeeper) return;
+    if (!shopkeeper) return;
 
-  const moodRoll = Math.random();
-  let baseMood = "reserved";
+    const pronouns = getShopkeeperPronouns(shopkeeper.name);
 
-  if (shopkeeper.priceModifier > 0.15) {
-    baseMood = moodRoll > 0.7 ? "reserved" : moodRoll > 0.4 ? "doubtful" : "open";
-  } else if (shopkeeper.priceModifier < -0.15) {
-    baseMood = moodRoll > 0.5 ? "open" : moodRoll > 0.2 ? "welcoming" : "reserved";
-  } else {
-    baseMood = moodRoll > 0.6 ? "open" : moodRoll > 0.2 ? "reserved" : "welcoming";
-  }
+    // Use displayMood which includes charisma modifier
+    const displayMood = getDisplayMood(shopkeeperMood, playerCharisma);
 
-  const applyCharismaMoodModifier = (baseMood, charisma) => {
-    const moodScale = ["dismissive", "doubtful", "reserved", "open", "welcoming"];
-    const currentIndex = moodScale.indexOf(baseMood);
-    if (currentIndex === -1) return baseMood;
+    const { moodDescription, personalityDescription } =
+      getShopkeeperDescriptions(
+        displayMood,
+        shopkeeper.priceModifier,
+        pronouns
+      );
 
-    let modifier = 0;
-    if (charisma >= 3) {
-      modifier = Math.floor((charisma - 2) / 2);
-    } else if (charisma <= -3) {
-      modifier = Math.ceil((charisma + 2) / 2);
-    }
+    setSelectedMoodDesc(moodDescription);
+    setSelectedPersonalityDesc(personalityDescription);
+  }, [shopkeeperMood, shopkeeper, playerCharisma]);
 
-    const newIndex = Math.max(0, Math.min(moodScale.length - 1, currentIndex + modifier));
-    return moodScale[newIndex];
-  };
+  useEffect(() => {
+    if (!shopkeeper) return;
 
-  const finalMood = applyCharismaMoodModifier(baseMood, playerCharisma);
-  setShopkeeperMood(finalMood);
-  setIsHaggleReaction(false);
-}, [shopkeeper, playerCharisma]);
+    // Only reset if shopkeeper identity actually changed
+    const shopkeeperIdentity = `${shopkeeper.name}-${shopkeeper.shopType}`;
+    if (shopkeeperIdentity === lockedShopkeeperIdentity) return;
 
-useEffect(() => {
-  if (!shopkeeper) return;
+    setLockedShopkeeperIdentity(shopkeeperIdentity);
 
-  const pronouns = getShopkeeperPronouns(shopkeeper.name);
-  
-  // Use displayMood which includes charisma modifier
-  const displayMood = getDisplayMood(shopkeeperMood, playerCharisma);
+    // Reset all haggling-related state to initial values
+    setLastHaggleResult(null);
+    setIsHaggleReaction(false);
+    setCurrentHaggleQuote("");
+    setHaggleAttempts(3);
+    setHasTriedCharismaCheck(false);
+    setRelationshipStatus("reserved");
+    setCritFailCount(0);
+    setIsLockedOut(false);
+    setApologyFee(0);
+    setLockoutReason("");
+    setHasHaggled(false);
+    setLastHaggleWasSuccessful(null);
+    setIsCartChangeReaction(false);
+    setCartChangeDescription("");
+    setCartChangeQuote("");
 
-  const { moodDescription, personalityDescription } =
-    getShopkeeperDescriptions(
-      displayMood,
-      shopkeeper.priceModifier,
-      pronouns
+    // Reset haggle DC to base value
+    const hagglingStyle = getHagglingStyle(
+      settlementSize,
+      shopkeeper.priceModifier
     );
-
-  setSelectedMoodDesc(moodDescription);
-  setSelectedPersonalityDesc(personalityDescription);
-}, [shopkeeperMood, shopkeeper, playerCharisma]);
-
-useEffect(() => {
-  if (!shopkeeper) return;
-
-  // Only reset if shopkeeper identity actually changed
-  const shopkeeperIdentity = `${shopkeeper.name}-${shopkeeper.shopType}`;
-  if (shopkeeperIdentity === lockedShopkeeperIdentity) return;
-  
-  setLockedShopkeeperIdentity(shopkeeperIdentity);
-
-  // Reset all haggling-related state to initial values
-  setLastHaggleResult(null);
-  setIsHaggleReaction(false);
-  setCurrentHaggleQuote("");
-  setHaggleAttempts(3);
-  setHasTriedCharismaCheck(false);
-  setRelationshipStatus("reserved");
-  setCritFailCount(0);
-  setIsLockedOut(false);
-  setApologyFee(0);
-  setLockoutReason("");
-  setHasHaggled(false);
-  setLastHaggleWasSuccessful(null);
-  setIsCartChangeReaction(false);
-  setCartChangeDescription("");
-  setCartChangeQuote("");
-
-  // Reset haggle DC to base value
-  const hagglingStyle = getHagglingStyle(
+    setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
+  }, [
+    shopkeeper?.name,
+    shopkeeper?.shopType,
     settlementSize,
-    shopkeeper.priceModifier
-  );
-  setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
-}, [shopkeeper?.name, shopkeeper?.shopType, settlementSize, lockedShopkeeperIdentity]);
+    lockedShopkeeperIdentity,
+  ]);
 
   // Effect to generate new inventory on settlement selection
   useEffect(() => {
@@ -1395,7 +881,6 @@ useEffect(() => {
         {
           interior: shopkeeper.shopDescriptionParts.interior,
           texture: shopkeeper.shopDescriptionParts.texture,
-          
         }
       );
 
@@ -1436,6 +921,44 @@ useEffect(() => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  useEffect(() => {
+    if (cartItems.length > 0) {
+      setCartItems((prev) =>
+        prev.map((item) => ({
+          ...item,
+          charismaBonus: playerCharisma * 5, // Update charisma bonus
+        }))
+      );
+    }
+  }, [playerCharisma]);
+
+  // Effect to generate random shop on initial load
+  useEffect(() => {
+    const sizes = ["village", "town", "city"];
+    const randomSize = sizes[Math.floor(Math.random() * sizes.length)];
+    setSettlementSize(randomSize);
+    setSelectedPricingStyle("random");
+    generateShopkeeper("random", randomSize, "random");
+  }, []);
+
+  // Add this useEffect to handle the dark class on the document
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+      document.body.classList.add("dark");
+      // Force a repaint
+      document.documentElement.style.colorScheme = "dark";
+    } else {
+      document.documentElement.classList.remove("dark");
+      document.body.classList.remove("dark");
+      document.documentElement.style.colorScheme = "light";
+    }
+
+    // Debug logging
+    console.log("Dark mode applied:", isDarkMode);
+    console.log("HTML classes:", document.documentElement.className);
+  }, [isDarkMode]);
 
   // Add this useEffect to recalculate cart prices when charisma changes
   useEffect(() => {
@@ -1501,176 +1024,180 @@ useEffect(() => {
             generateMotto={generateMotto}
           />
 
-{/* Tab Navigation */}
-<div className="shopkeeper-card rounded-t-md border-b border-stone-300 shadow-md pt-6 px-6 !pb-0 mb-0 bg-stone-100 dark:bg-gray-700 overflow-hidden">
-  <div className="flex gap-4">
-    <button
-      onClick={() => {
-        setActiveTab('inventory');
-        // Don't trigger any reactions when switching tabs
-        setIsCartChangeReaction(false);
-        setIsHaggleReaction(false);
-      }}
-      className={`${buttonStyles.tab} ${
-        activeTab === 'inventory'
-          ? 'text-stone-700 dark:text-gray-200 border-b-2 border-stone-400 dark:border-gray-300'
-          : 'text-stone-500 dark:text-gray-400 hover:text-stone-700 dark:hover:text-gray-200'
-      }`}
-    >
-      <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>
-        inventory_2
-      </span>
-      Buy From Shop
-    </button>
-    
-    <button
-      onClick={() => {
-        setActiveTab('selling');
-        // Don't trigger any reactions when switching tabs
-        setIsCartChangeReaction(false);
-        setIsHaggleReaction(false);
-      }}
-      className={`${buttonStyles.tab} ${
-        activeTab === 'selling'
-          ? 'dark:text-gray-200 border-b-2 border-stone-400 dark:border-gray-300'
-          : 'text-stone-500 dark:text-gray-400 hover:text-stone-700 dark:hover:text-gray-200'
-      }`}
-    >
-      <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>
-        sell
-      </span>
-      Sell to Shop
-    </button>
-  </div>
-</div>
+          {/* Tab Navigation */}
+          <div className="shopkeeper-card rounded-t-md border-b border-stone-300 shadow-md pt-6 px-6 !pb-0 mb-0 bg-stone-100 dark:bg-gray-700 overflow-hidden">
+            <div className="flex gap-4">
+              <button
+                onClick={() => {
+                  setActiveTab("inventory");
+                  // Don't trigger any reactions when switching tabs
+                  setIsCartChangeReaction(false);
+                  setIsHaggleReaction(false);
+                }}
+                className={`${buttonStyles.tab} ${
+                  activeTab === "inventory"
+                    ? "text-stone-700 dark:text-gray-200 border-b-2 border-stone-400 dark:border-gray-300"
+                    : "text-stone-500 dark:text-gray-400 hover:text-stone-700 dark:hover:text-gray-200"
+                }`}
+              >
+                <span
+                  className="material-symbols-outlined"
+                  style={{ fontSize: "20px" }}
+                >
+                  inventory_2
+                </span>
+                Buy From Shop
+              </button>
+
+              <button
+                onClick={() => {
+                  setActiveTab("selling");
+                  // Don't trigger any reactions when switching tabs
+                  setIsCartChangeReaction(false);
+                  setIsHaggleReaction(false);
+                }}
+                className={`${buttonStyles.tab} ${
+                  activeTab === "selling"
+                    ? "dark:text-gray-200 border-b-2 border-stone-400 dark:border-gray-300"
+                    : "text-stone-500 dark:text-gray-400 hover:text-stone-700 dark:hover:text-gray-200"
+                }`}
+              >
+                <span
+                  className="material-symbols-outlined"
+                  style={{ fontSize: "20px" }}
+                >
+                  sell
+                </span>
+                Sell to Shop
+              </button>
+            </div>
+          </div>
 
           {/* Conditional Content */}
-{activeTab === 'inventory' && (
-  <InventorySection
-    shopkeeper={shopkeeper}
-    settlementSize={settlementSize}
-    isDarkMode={isDarkMode}
-    closeAllDropdowns={closeAllDropdowns}
-    setShopkeeper={setShopkeeper}
-    isCategoryDropdownOpen={isCategoryDropdownOpen}
-    setIsCategoryDropdownOpen={setIsCategoryDropdownOpen}
-    isSortDropdownOpen={isSortDropdownOpen}
-    setIsSortDropdownOpen={setIsSortDropdownOpen}
-    shopkeeperMood={shopkeeperMood}
-    playerCharisma={playerCharisma}
-    getHagglingStyle={getHagglingStyle}
-    isCartChangeReaction={isCartChangeReaction}
-    cartChangeDescription={cartChangeDescription}
-    cartChangeQuote={cartChangeQuote}
-    isHaggleReaction={isHaggleReaction}
-    lastHaggleResult={lastHaggleResult}
-    currentHaggleQuote={currentHaggleQuote}
-    selectedMoodDesc={selectedMoodDesc}
-    selectedPersonalityDesc={selectedPersonalityDesc}
-     cartItems={cartItems}
-    playerMoney={playerMoney}
-    onAddToCart={addToCart}
-    onUpdateCartQuantity={updateCartQuantity}
-    onRemoveFromCart={removeFromCart}
-    onClearCart={clearCart}
-    onCompletePurchase={completePurchase}
-    onUpdatePlayerMoney={setPlayerMoney}
-    buyingHaggleAttempts={buyingHaggleAttempts}
-    buyingIsHaggling={buyingIsHaggling}
-    buyingLastHaggleResult={buyingLastHaggleResult}
-    recentPurchases={recentPurchases}
-    onAttemptBuyingHaggle={attemptBuyingHaggle}
-  />
-)}
+          {activeTab === "inventory" && (
+            <InventorySection
+              shopkeeper={shopkeeper}
+              settlementSize={settlementSize}
+              isDarkMode={isDarkMode}
+              closeAllDropdowns={closeAllDropdowns}
+              setShopkeeper={setShopkeeper}
+              isCategoryDropdownOpen={isCategoryDropdownOpen}
+              setIsCategoryDropdownOpen={setIsCategoryDropdownOpen}
+              isSortDropdownOpen={isSortDropdownOpen}
+              setIsSortDropdownOpen={setIsSortDropdownOpen}
+              shopkeeperMood={shopkeeperMood}
+              playerCharisma={playerCharisma}
+              getHagglingStyle={getHagglingStyle}
+              isCartChangeReaction={isCartChangeReaction}
+              cartChangeDescription={cartChangeDescription}
+              cartChangeQuote={cartChangeQuote}
+              isHaggleReaction={isHaggleReaction}
+              lastHaggleResult={lastHaggleResult}
+              currentHaggleQuote={currentHaggleQuote}
+              selectedMoodDesc={selectedMoodDesc}
+              selectedPersonalityDesc={selectedPersonalityDesc}
+              cartItems={cartItems}
+              playerMoney={playerMoney}
+              onAddToCart={addToCart}
+              onUpdateCartQuantity={updateCartQuantity}
+              onRemoveFromCart={removeFromCart}
+              onClearCart={clearCart}
+              onCompletePurchase={completePurchase}
+              onUpdatePlayerMoney={setPlayerMoney}
+              buyingHaggleAttempts={buyingHaggleAttempts}
+              buyingIsHaggling={buyingIsHaggling}
+              buyingLastHaggleResult={buyingLastHaggleResult}
+              recentPurchases={recentPurchases}
+              onAttemptBuyingHaggle={attemptBuyingHaggle}
+            />
+          )}
 
-{activeTab === 'selling' && (
-  <SellingSection
-    shopkeeper={shopkeeper}
-    settlementSize={settlementSize}
-    closeAllDropdowns={closeAllDropdowns}
-    updateShopkeeper={setShopkeeper}
-    isCategoryFilterDropdownOpen={isCategoryFilterDropdownOpen}
-    setIsCategoryFilterDropdownOpen={setIsCategoryFilterDropdownOpen}
-    isCharismaDropdownOpen={isCharismaDropdownOpen}
-    setIsCharismaDropdownOpen={setIsCharismaDropdownOpen}
-    getHagglingStyle={getHagglingStyle}
-    shopkeeperMood={shopkeeperMood}
-    setShopkeeperMood={setShopkeeperMood}
-    playerCharisma={playerCharisma}
-    setPlayerCharisma={setPlayerCharisma}
-    haggleAttempts={haggleAttempts}
-    setHaggleAttempts={setHaggleAttempts}
-    currentHaggleDC={currentHaggleDC}
-    setCurrentHaggleDC={setCurrentHaggleDC}
-    lastHaggleResult={lastHaggleResult}
-    setLastHaggleResult={setLastHaggleResult}
-    isHaggling={isHaggling}
-    setIsHaggling={setIsHaggling}
-    isHaggleReaction={isHaggleReaction}
-    setIsHaggleReaction={setIsHaggleReaction}
-    currentHaggleQuote={currentHaggleQuote}
-    setCurrentHaggleQuote={setCurrentHaggleQuote}
-    hasHaggled={hasHaggled}
-    setHasHaggled={setHasHaggled}
-    lastHaggleWasSuccessful={lastHaggleWasSuccessful}
-    setLastHaggleWasSuccessful={setLastHaggleWasSuccessful}
-    isCartChangeReaction={isCartChangeReaction}
-    setIsCartChangeReaction={setIsCartChangeReaction}
-    cartChangeDescription={cartChangeDescription}
-    setCartChangeDescription={setCartChangeDescription}
-    cartChangeQuote={cartChangeQuote}
-    setCartChangeQuote={setCartChangeQuote}
-    hasTriedCharismaCheck={hasTriedCharismaCheck}
-    setHasTriedCharismaCheck={setHasTriedCharismaCheck}
-    relationshipStatus={relationshipStatus}
-    setRelationshipStatus={setRelationshipStatus}
-    critFailCount={critFailCount}
-    setCritFailCount={setCritFailCount}
-    isLockedOut={isLockedOut}
-    setIsLockedOut={setIsLockedOut}
-    apologyFee={apologyFee}
-    setApologyFee={setApologyFee}
-    lockoutReason={lockoutReason}
-    setLockoutReason={setLockoutReason}
-    resetHaggleState={resetHaggleState}
-    selectedMoodDesc={selectedMoodDesc}
-    setSelectedMoodDesc={setSelectedMoodDesc}
-    selectedPersonalityDesc={selectedPersonalityDesc}
-    setSelectedPersonalityDesc={setSelectedPersonalityDesc}
-    sellingItems={sellingItems}
-    setSellingItems={setSellingItems}
-    recentSales={recentSales}
-    setRecentSales={setRecentSales}
-    itemSearchQuery={itemSearchQuery}
-    setItemSearchQuery={setItemSearchQuery}
-    selectedItemCategory={selectedItemCategory}
-    setSelectedItemCategory={setSelectedItemCategory}
-    addItemToSell={addItemToSell}
-    removeItemFromSell={removeItemFromSell}
-    updateSellQuantity={updateSellQuantity}
-    attemptHaggle={attemptHaggle}
-    executeSale={executeSale}
-    undoSale={undoSale}
-    calculateSaleTotal={calculateSaleTotal}
-    getTotalMarketValue={getTotalMarketValue}
-    calculateShopTotalMoney={calculateShopTotalMoney}
-    handleApologyPayment={handleApologyPayment}
-    handleCharismaCheck={handleCharismaCheck}
-    isSortDropdownOpen={isSortDropdownOpen}
-    setIsSortDropdownOpen={setIsSortDropdownOpen}
-    isDarkMode={isDarkMode}
-    
-    // ✅ ADD THESE CALLBACK PROPS (these map to the above functions):
-    onUpdateQuantity={updateSellQuantity}
-    onRemoveItem={removeItemFromSell}
-    onExecuteSale={executeSale}
-    onAttemptHaggle={attemptHaggle}
-    onApologyPayment={handleApologyPayment}
-    onCharismaCheck={handleCharismaCheck}
-    onUndoSale={undoSale}
-    
-  />
-)}
+          {activeTab === "selling" && (
+            <SellingSection
+              shopkeeper={shopkeeper}
+              settlementSize={settlementSize}
+              closeAllDropdowns={closeAllDropdowns}
+              updateShopkeeper={setShopkeeper}
+              isCategoryFilterDropdownOpen={isCategoryFilterDropdownOpen}
+              setIsCategoryFilterDropdownOpen={setIsCategoryFilterDropdownOpen}
+              isCharismaDropdownOpen={isCharismaDropdownOpen}
+              setIsCharismaDropdownOpen={setIsCharismaDropdownOpen}
+              getHagglingStyle={getHagglingStyle}
+              shopkeeperMood={shopkeeperMood}
+              setShopkeeperMood={setShopkeeperMood}
+              playerCharisma={playerCharisma}
+              setPlayerCharisma={setPlayerCharisma}
+              haggleAttempts={haggleAttempts}
+              setHaggleAttempts={setHaggleAttempts}
+              currentHaggleDC={currentHaggleDC}
+              setCurrentHaggleDC={setCurrentHaggleDC}
+              lastHaggleResult={lastHaggleResult}
+              setLastHaggleResult={setLastHaggleResult}
+              isHaggling={isHaggling}
+              setIsHaggling={setIsHaggling}
+              isHaggleReaction={isHaggleReaction}
+              setIsHaggleReaction={setIsHaggleReaction}
+              currentHaggleQuote={currentHaggleQuote}
+              setCurrentHaggleQuote={setCurrentHaggleQuote}
+              hasHaggled={hasHaggled}
+              setHasHaggled={setHasHaggled}
+              lastHaggleWasSuccessful={lastHaggleWasSuccessful}
+              setLastHaggleWasSuccessful={setLastHaggleWasSuccessful}
+              isCartChangeReaction={isCartChangeReaction}
+              setIsCartChangeReaction={setIsCartChangeReaction}
+              cartChangeDescription={cartChangeDescription}
+              setCartChangeDescription={setCartChangeDescription}
+              cartChangeQuote={cartChangeQuote}
+              setCartChangeQuote={setCartChangeQuote}
+              hasTriedCharismaCheck={hasTriedCharismaCheck}
+              setHasTriedCharismaCheck={setHasTriedCharismaCheck}
+              relationshipStatus={relationshipStatus}
+              setRelationshipStatus={setRelationshipStatus}
+              critFailCount={critFailCount}
+              setCritFailCount={setCritFailCount}
+              isLockedOut={isLockedOut}
+              setIsLockedOut={setIsLockedOut}
+              apologyFee={apologyFee}
+              setApologyFee={setApologyFee}
+              lockoutReason={lockoutReason}
+              setLockoutReason={setLockoutReason}
+              resetHaggleState={resetHaggleState}
+              selectedMoodDesc={selectedMoodDesc}
+              setSelectedMoodDesc={setSelectedMoodDesc}
+              selectedPersonalityDesc={selectedPersonalityDesc}
+              setSelectedPersonalityDesc={setSelectedPersonalityDesc}
+              sellingItems={sellingItems}
+              setSellingItems={setSellingItems}
+              recentSales={recentSales}
+              setRecentSales={setRecentSales}
+              itemSearchQuery={itemSearchQuery}
+              setItemSearchQuery={setItemSearchQuery}
+              selectedItemCategory={selectedItemCategory}
+              setSelectedItemCategory={setSelectedItemCategory}
+              addItemToSell={addItemToSell}
+              removeItemFromSell={removeItemFromSell}
+              updateSellQuantity={updateSellQuantity}
+              attemptHaggle={attemptHaggle}
+              executeSale={executeSale}
+              undoSale={undoSale}
+              calculateSaleTotal={calculateSaleTotal}
+              getTotalMarketValue={getTotalMarketValue}
+              calculateShopTotalMoney={calculateShopTotalMoney}
+              handleApologyPayment={handleApologyPayment}
+              handleCharismaCheck={handleCharismaCheck}
+              isSortDropdownOpen={isSortDropdownOpen}
+              setIsSortDropdownOpen={setIsSortDropdownOpen}
+              isDarkMode={isDarkMode}
+              // ✅ ADD THESE CALLBACK PROPS (these map to the above functions):
+              onUpdateQuantity={updateSellQuantity}
+              onRemoveItem={removeItemFromSell}
+              onExecuteSale={executeSale}
+              onAttemptHaggle={attemptHaggle}
+              onApologyPayment={handleApologyPayment}
+              onCharismaCheck={handleCharismaCheck}
+              onUndoSale={undoSale}
+            />
+          )}
         </>
       )}
     </div>

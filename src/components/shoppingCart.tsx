@@ -8,13 +8,10 @@ import {
   getShopkeeperBuyRate,
 } from "../utils/pricing";
 
-import {
-  getIconForItem,
-  getIconComponent,
-  getRarityBadgeClass,
-} from "../utils/helpers";
-
 import { buttonStyles } from "../styles/buttonStyles";
+import { getIconForItem } from "../helpers/getIconForItem";
+import { getIconComponent } from "../helpers/getIconComponent";
+import { getRarityBadgeClass } from "../helpers/getRarityBadgeClass";
 
 // PhosphorIcon component
 

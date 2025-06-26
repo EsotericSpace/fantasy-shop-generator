@@ -16,16 +16,14 @@ import ShopkeeperMoodDisplay from "./shopkeeperMoodDisplay";
 
 import { formatCurrency } from "../utils/pricing";
 
-import {
-  sortItems,
-  getCategoryForItem,
-} from "../utils/helpers";
 
 import {
   getInventoryLimits,
   generateCommonItems,
   generateRareItems,
 } from "../utils/shopGeneration";
+import { getCategoryForItem } from "../helpers/getCategoryForItem";
+import { sortItems } from "../helpers/sortItems";
 
 const PhosphorIcon = ({ icon: Icon, weight = "thin", size = 20, ...props }) => (
   <Icon weight={weight} size={size} {...props} />

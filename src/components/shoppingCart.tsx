@@ -28,12 +28,14 @@ export interface CartItem {
   name: string;
   quantity: number;
   level?: string;
-  price: string;           // Original price
-  adjustedPrice: string;   // Shopkeeper's price
-  basePrice?: string;      // Market price
+  price: string;
+  adjustedPrice: string;
+  basePrice?: string;
+  priceValue?: number;      // ADD THIS
+  basePriceValue?: number;  // ADD THIS
   details?: string;
-  charismaBonus?: number;  // NEW: Charisma discount percentage
-  haggleBonus?: number;    // NEW: Haggling discount percentage
+  charismaBonus?: number;
+  haggleBonus?: number;
 }
 
 export interface ShoppingCartProps {
@@ -45,6 +47,8 @@ export interface ShoppingCartProps {
   onCompletePurchase: () => void;
   onClearCart: () => void;
   isDarkMode?: boolean;
+  
+  // EXISTING haggling props (keep these)
   playerCharisma?: number;
   onUpdateCharisma?: (charisma: number) => void;
   buyingHaggleAttempts?: number;
@@ -53,7 +57,16 @@ export interface ShoppingCartProps {
   recentPurchases?: PurchaseRecord[];
   onAttemptHaggle?: () => void;
   onUndoPurchase?: (purchaseId: number) => void;
-  calculateEnhancedCartTotal?: () => number;
+  calculateCartTotal?: () => number;
+  calculateOriginalCartTotal?: () => number;
+  
+  // ADD NEW lockout and apology props (matching SellingCart)
+  buyingIsLockedOut?: boolean;
+  buyingLockoutReason?: string;
+  buyingApologyFee?: number;
+  buyingHasTriedCharismaCheck?: boolean;
+  onApologyPayment?: () => void;
+  onCharismaCheck?: () => void;
 }
 
 export interface BuyingHaggleResult {
@@ -159,6 +172,7 @@ const safeObject = (obj: any): any => {
   return obj != null && typeof obj === 'object' ? obj : {};
 };
 
+
 // ===== BUYING COMPONENT (PLAYER PURCHASES FROM SHOP) =====
 
 export const ShoppingCart: React.FC<ShoppingCartProps> = ({
@@ -170,6 +184,8 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
   onCompletePurchase,
   onClearCart,
   isDarkMode = false,
+  
+  // EXISTING haggling props (keep these)
   playerCharisma = 0,
   onUpdateCharisma,
   buyingHaggleAttempts = 3,
@@ -178,38 +194,32 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
   recentPurchases,
   onAttemptHaggle,
   onUndoPurchase,
-  calculateEnhancedCartTotal,
+  calculateCartTotal,
+  calculateOriginalCartTotal,
+  
+  // ADD NEW lockout and apology props
+  buyingIsLockedOut = false,
+  buyingLockoutReason = "",
+  buyingApologyFee = 0,
+  buyingHasTriedCharismaCheck = false,
+  onApologyPayment,
+  onCharismaCheck,
 }) => {
+    console.log("🛒 ShoppingCart Debug:", {
+    cartItems,
+    cartItemsLength: cartItems?.length,
+    calculateCartTotal: typeof calculateCartTotal,
+    calculateOriginalCartTotal: typeof calculateOriginalCartTotal,
+    cartTotalResult: calculateCartTotal ? calculateCartTotal() : "function missing",
+    originalTotalResult: calculateOriginalCartTotal ? calculateOriginalCartTotal() : "function missing"
+  });
   // Ultra-safe checks for all potentially null objects
   const safeCartItems = safeArray(cartItems);
   const safeShopkeeper = safeObject(shopkeeper);
   const safeRecentPurchases = safeArray(recentPurchases);
   const safeBuyingLastHaggleResult = safeObject(buyingLastHaggleResult);
-
-  // Calculate total cart value
-  const calculateCartTotal = () => {
-    return safeCartItems.reduce((total, item) => {
-      if (!item || typeof item !== 'object') return total;
-      const itemPrice = parsePriceToGold(safeGet(item, 'adjustedPrice') || safeGet(item, 'price', '0'));
-      const quantity = safeGet(item, 'quantity', 0);
-      return total + itemPrice * quantity;
-    }, 0);
-  };
-
-  const calculateOriginalTotal = () => {
-    return safeCartItems.reduce((total, item) => {
-      if (!item || typeof item !== 'object') return total;
-      const basePrice = parsePriceToGold(safeGet(item, 'basePrice') || safeGet(item, 'price', '0'));
-      const quantity = safeGet(item, 'quantity', 0);
-      return total + basePrice * quantity;
-    }, 0);
-  };
-
-  const cartTotal = calculateEnhancedCartTotal ? 
-    calculateEnhancedCartTotal() : 
-    calculateCartTotal();
-
-  const originalTotal = calculateOriginalTotal();
+  const cartTotal = calculateCartTotal ? calculateCartTotal() : 0;
+  const originalTotal = calculateOriginalCartTotal ? calculateOriginalCartTotal() : 0;
   const canAfford = playerMoney >= cartTotal;
 
   if (safeCartItems.length === 0) {
@@ -228,7 +238,8 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
               const itemName = safeGet(item, 'name', 'Unknown Item');
               const itemLevel = safeGet(item, 'level');
               const itemQuantity = safeGet(item, 'quantity', 0);
-              const itemPrice = safeGet(item, 'adjustedPrice') || safeGet(item, 'price', '0');
+              const itemPriceStr = safeGet(item, 'adjustedPrice') || safeGet(item, 'price', '0');
+const itemPrice = parsePriceToGold(itemPriceStr);
               
               const iconValue = getIconForItem(itemName);
               const IconComponent = getIconComponent(itemName);
@@ -271,9 +282,9 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
                         )}
 
                         <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-gray-400">
-                          <span
+                            <span
                             dangerouslySetInnerHTML={{
-                              __html: formatCurrency(parsePriceToGold(itemPrice)),
+                              __html: formatCurrency(itemPrice),
                             }}
                           />
                         </div>
@@ -322,7 +333,13 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
           </div>
         </div>
 
-        {/* Haggle Result Display */}
+        
+        {/* Buying Cart Total and Controls */}
+        <div className="rounded-b-lg border border-stone-300 dark:border-gray-500 pt-4">
+          <div className="rounded-lg px-4">
+            <div className="space-y-2 mb-4">
+
+                {/* Buying Haggle Result Display */}
         {buyingLastHaggleResult && typeof buyingLastHaggleResult === 'object' && (
           <div className={`mb-4 p-3 rounded-lg border ${
             safeGet(safeBuyingLastHaggleResult, 'success', false)
@@ -348,10 +365,50 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
           </div>
         )}
 
-        {/* Cart Total and Controls */}
-        <div className="rounded-b-lg border border-stone-300 dark:border-gray-500 pt-4">
-          <div className="rounded-lg px-4">
-            <div className="space-y-2 mb-4">
+        {/* Buying Lockout Display */}
+        {buyingIsLockedOut && (
+          <div className="mb-4 p-4 rounded-lg border bg-red-50 border-red-300 text-red-700 dark:bg-red-900 dark:border-red-700 dark:text-red-300">
+            <div className="flex items-start">
+              <span className="material-symbols-outlined mr-2 mt-0.5">
+                block
+              </span>
+              <div className="flex-1">
+                <p className="font-medium mb-2">{buyingLockoutReason}</p>
+                <p className="text-sm mb-3">
+                  {safeGet(safeShopkeeper, 'name', 'Shopkeeper').split(" ")[0]} refuses to negotiate
+                  further and demands an apology fee of{" "}
+                  <span
+                    className="font-bold"
+                    dangerouslySetInnerHTML={{
+                      __html: formatCurrency(buyingApologyFee),
+                    }}
+                  ></span>{" "}
+                  to restore relations.
+                </p>
+                <div className="space-y-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      onClick={onApologyPayment}
+                      disabled={playerMoney < buyingApologyFee}
+                      className="px-3 py-2 bg-green-100 border border-green-400 hover:bg-green-200 disabled:bg-stone-200 dark:disabled:bg-gray-600 text-green-700 disabled:text-stone-500 dark:disabled:text-gray-400 text-sm rounded transition-colors disabled:cursor-not-allowed"
+                    >
+                      Pay Apology Fee
+                    </button>
+                    <button
+                      onClick={onCharismaCheck}
+                      disabled={buyingHasTriedCharismaCheck}
+                      className="px-3 py-2 bg-blue-100 border border-blue-400 hover:bg-blue-200 disabled:bg-stone-200 dark:disabled:bg-gray-600 text-blue-700 disabled:text-stone-500 dark:disabled:text-gray-400 text-sm rounded transition-colors disabled:cursor-not-allowed"
+                    >
+                      {buyingHasTriedCharismaCheck
+                        ? "Already Attempted"
+                        : "Charisma Check (DC 15)"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
               {/* Price breakdown */}
               <div className="flex items-center justify-between pl-2 pr-2 text-sm font-medium text-stone-500 dark:text-gray-300">
                 <span className="text-stone-600 dark:text-gray-300">
@@ -417,9 +474,36 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
               {/* Display haggle bonus if any */}
               {safeCartItems.some(item => item && safeGet(item, 'haggleBonus', 0) !== 0) && (
                 <div className="flex items-center justify-between pl-2 pr-2 text-sm text-stone-500 dark:text-gray-300">
-                  <span className="text-stone-600 dark:text-gray-300">Haggle Discount:</span>
-                  <span className="text-green-600 dark:text-green-400">
-                    -{Math.abs(safeCartItems.reduce((sum, item) => sum + safeGet(item, 'haggleBonus', 0), 0) / Math.max(safeCartItems.length, 1)).toFixed(1)}%
+                  <span className="text-stone-600 dark:text-gray-300">
+                    {(() => {
+                      const maxBonus = Math.max(...safeCartItems.map(item => safeGet(item, 'haggleBonus', 0)));
+                      const minBonus = Math.min(...safeCartItems.map(item => safeGet(item, 'haggleBonus', 0)));
+
+                      if (maxBonus > 0 && minBonus >= 0) {
+                        return "Haggle Discount:";
+                      } else if (maxBonus <= 0 && minBonus < 0) {
+                        return "Haggle Penalty:";
+                      } else {
+                        return "Haggle Net:";
+                      }
+                    })()}
+                  </span>
+
+                  <span
+                    className={`${(() => {
+                      const netBonus = safeCartItems.reduce((sum, item) => sum + safeGet(item, 'haggleBonus', 0), 0) / Math.max(safeCartItems.length, 1);
+                      return netBonus >= 0
+                        ? "text-green-600 dark:text-green-400"
+                        : "text-orange-600 dark:text-orange-400";
+                    })()}`}
+                  >
+                    {(() => {
+                      const totalBonus = safeCartItems.reduce((sum, item) => sum + safeGet(item, 'haggleBonus', 0), 0);
+                      const avgBonus = totalBonus / Math.max(safeCartItems.length, 1);
+                      return avgBonus >= 0
+                        ? `${avgBonus.toFixed(1)}%`
+                        : `${avgBonus.toFixed(1)}%`;
+                    })()}
                   </span>
                 </div>
               )}
@@ -438,25 +522,69 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
                 </div>
 
                 <div className="till-display">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-stone-500 dark:text-gray-300">
-                      Your Gold After Purchase
-                    </span>
-                    <div
-                      className={`till-amount font-medium ${
-                        canAfford
-                          ? "text-green-600 dark:text-green-400"
-                          : "text-red-600 dark:text-red-400"
-                      }`}
-                    >
-                      <span
-                        dangerouslySetInnerHTML={{
-                          __html: formatCurrency(Math.max(0, playerMoney - cartTotal)),
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
+  <div className="flex items-center justify-between">
+    <span className="text-sm text-stone-500 dark:text-gray-300">
+      Your Money After Purchase
+    </span>
+
+    <span className="flex items-center text-sm text-stone-500 dark:text-gray-300"></span>
+
+    <div
+      className={`till-amount font-medium ${(() => {
+        if (safeCartItems.length === 0 || buyingIsLockedOut) {
+          return "text-stone-600 dark:text-gray-300";
+        }
+
+        const remainingAfterPurchase = playerMoney - cartTotal;
+
+        return remainingAfterPurchase < 0
+          ? "text-red-600 dark:text-red-400"
+          : "text-green-600 dark:text-green-400";
+      })()}`}
+    >
+      {(() => {
+        if (safeCartItems.length === 0 || buyingIsLockedOut) {
+          return (
+            <span
+              dangerouslySetInnerHTML={{
+                __html: formatCurrency(playerMoney),
+              }}
+            />
+          );
+        }
+
+        const remainingAfterPurchase = playerMoney - cartTotal;
+
+        if (remainingAfterPurchase < 0) {
+          const absoluteValue = Math.abs(remainingAfterPurchase);
+          const formattedPositive = formatCurrency(absoluteValue);
+          // Insert the minus sign after the icons but before the numbers
+          // Format should be: [icons]-123 instead of -[icons]123
+          const withMinusSign = formattedPositive.replace(
+            /(\d+)/, // Find the first number
+            "-$1" // Replace it with -number
+          );
+
+          return (
+            <span
+              dangerouslySetInnerHTML={{
+                __html: withMinusSign,
+              }}
+            />
+          );
+        } else {
+          return (
+            <span
+              dangerouslySetInnerHTML={{
+                __html: formatCurrency(remainingAfterPurchase),
+              }}
+            />
+          );
+        }
+      })()}
+    </div>
+  </div>
+</div>
               </div>
             </div>
           </div>
@@ -465,43 +593,65 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
 
       {/* Action Buttons */}
       <div className="flex gap-4 mt-4">
+        {/* Complete Purchase Button */}
         <button
           onClick={onCompletePurchase}
-          disabled={!canAfford || safeCartItems.length === 0}
+          disabled={(() => {
+            if (safeCartItems.length === 0) return true;
+            if (buyingIsLockedOut) return true;
+            return !canAfford;
+          })()}
           className={`${buttonStyles.sale} flex-1`}
         >
           <span
             className="material-symbols-outlined"
             style={{ fontSize: "18px" }}
           >
-            {canAfford ? "shopping_cart_checkout" : "money_off"}
+            {(() => {
+              if (buyingIsLockedOut) return "block";
+              if (safeCartItems.length === 0) return "block";
+              if (!canAfford) return "money_off";
+              return "shopping_cart_checkout";
+            })()}
           </span>
-          {canAfford ? "Complete Purchase" : "Insufficient Funds"}
+          {(() => {
+            if (buyingIsLockedOut) return "Purchase Locked";
+            if (safeCartItems.length === 0) return "Complete Purchase";
+            if (!canAfford) return "Insufficient Funds";
+            return "Complete Purchase";
+          })()}
         </button>
 
-        {/* Haggle Button */}
-        {onAttemptHaggle && (
-          <button
-            onClick={onAttemptHaggle}
-            disabled={safeCartItems.length === 0 || buyingHaggleAttempts <= 0 || buyingIsHaggling}
-            className={`${buttonStyles.primary} flex-none ${buyingIsHaggling ? "animate-pulse" : ""}`}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>handshake</span>
-            {safeCartItems.length === 0 ? "No Items" : `Haggle (${buyingHaggleAttempts} left)`}
-          </button>
-        )}
-
+        {/* Haggle Button (matching SellingCart exactly) */}
         <button
-          onClick={onClearCart}
-          className={`${buttonStyles.secondary} flex-none`}
+          onClick={onAttemptHaggle}
+          disabled={
+            safeCartItems.length === 0 ||
+            buyingHaggleAttempts <= 0 ||
+            buyingIsHaggling ||
+            buyingIsLockedOut ||
+            !canAfford
+          }
+          className={`${buttonStyles.primary} flex-none ${
+            buyingIsHaggling ? "animate-pulse" : ""
+          }`}
         >
           <span
             className="material-symbols-outlined"
             style={{ fontSize: "18px" }}
           >
-            clear_all
+            {(() => {
+              if (buyingIsLockedOut) return "block";
+              if (!canAfford) return "cancel";
+              return "handshake";
+            })()}
           </span>
-          Clear Cart
+          {(() => {
+            if (buyingIsLockedOut) return "Relations Damaged";
+            if (safeCartItems.length === 0) return "No Items to Haggle";
+            if (!canAfford) return "Cannot Haggle";
+            return `Haggle (${buyingHaggleAttempts} left)`;
+          })()}
         </button>
       </div>
 
@@ -668,12 +818,12 @@ export const SellingCart: React.FC<SellingCartProps> = ({
                             </span>
 
                             <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-gray-400">
-                              <span
-                                dangerouslySetInnerHTML={{
-                                  __html: formatCurrency(parsePriceToGold(itemPrice)),
-                                }}
-                              ></span>
-                            </div>
+                          <span
+                            dangerouslySetInnerHTML={{
+                              __html: formatCurrency(itemPrice),
+                            }}
+                          />
+                        </div>
                           </div>
                         </div>
                       </div>

@@ -82,7 +82,7 @@ const ShopItemsList: React.FC<ShopItemsListProps> = ({
       return (
         <span className="inline-flex items-center gap-1">
           <span className="font-medium text-sm"
-               dangerouslySetInnerHTML={{ __html: displayPrice }} />
+            dangerouslySetInnerHTML={{ __html: displayPrice }} />
           <span className="text-xs opacity-70 ">
             
           </span>

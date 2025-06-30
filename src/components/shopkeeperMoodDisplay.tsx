@@ -1,4 +1,4 @@
-// components/ShopkeeperMoodDisplay.tsx
+// components/shopkeeperMoodDisplay.tsx
 import React from "react";
 import Tooltip from './tooltip';
 import { getShopkeeperPronouns } from "../utils/shopGeneration";

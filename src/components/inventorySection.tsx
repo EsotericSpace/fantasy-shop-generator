@@ -14,7 +14,7 @@ import { shopItems, normalizeShopType } from "../data/shopItems";
 import { PurchaseRecord } from "./shoppingCart";
 import ShopkeeperMoodDisplay from "./shopkeeperMoodDisplay";
 
-import { formatCurrency } from "../utils/pricing";
+import { formatCurrency, parsePriceToGold } from "../utils/pricing";
 
 import {
   sortItems,
@@ -37,125 +37,151 @@ const PhosphorIcon = ({ icon: Icon, weight = "thin", size = 20, ...props }) => (
 
 interface InventorySectionProps {
   shopkeeper: any;
-
   settlementSize: string;
-
   isDarkMode: boolean;
-
   closeAllDropdowns: () => void;
-
   setShopkeeper: (shopkeeper: any) => void;
-
   isCategoryDropdownOpen: boolean;
-
   setIsCategoryDropdownOpen: (open: boolean) => void;
-
   isSortDropdownOpen: boolean;
-
   setIsSortDropdownOpen: (open: boolean) => void;
-
   shopkeeperMood: string;
-
   playerCharisma: number;
-
+  onUpdatePlayerCharisma: (charisma: number) => void;
   getHagglingStyle: (
     settlementSize: string,
     priceModifier: number
   ) => { name: string; dcModifier: number };
 
+  // EXISTING haggling props (keep these)
   isCartChangeReaction: boolean;
-
   cartChangeDescription: string;
-
   cartChangeQuote: string;
-
   isHaggleReaction: boolean;
-
   lastHaggleResult: any;
-
+  setLastHaggleResult: (result: any) => void;
   currentHaggleQuote: string;
-
   selectedMoodDesc: string;
-
   selectedPersonalityDesc: string;
 
+  // ADD MISSING haggling props (these match what SellingSection has)
+  buyingHaggleAttempts: number;
+  setBuyingHaggleAttempts: (attempts: number) => void;
+  buyingCurrentHaggleDC: number;
+  setBuyingCurrentHaggleDC: (dc: number) => void;
+  buyingIsHaggling: boolean;
+  setBuyingIsHaggling: (haggling: boolean) => void;
+  buyingHasHaggled: boolean;
+  setBuyingHasHaggled: (haggled: boolean) => void;
+  buyingLastHaggleWasSuccessful: boolean | null;
+  setBuyingLastHaggleWasSuccessful: (successful: boolean | null) => void;
+  buyingHasTriedCharismaCheck: boolean;
+  setBuyingHasTriedCharismaCheck: (tried: boolean) => void;
+  buyingRelationshipStatus: string;
+  setBuyingRelationshipStatus: (status: string) => void;
+  buyingCritFailCount: number;
+  setBuyingCritFailCount: (count: number) => void;
+  buyingIsLockedOut: boolean;
+  setBuyingIsLockedOut: (locked: boolean) => void;
+  buyingApologyFee: number;
+  setBuyingApologyFee: (fee: number) => void;
+  buyingLockoutReason: string;
+  setBuyingLockoutReason: (reason: string) => void;
+  resetBuyingHaggleState: () => void;
+
+  // EXISTING cart props (keep these)
   cartItems: CartItem[];
-
   playerMoney: number;
-
   recentPurchases?: PurchaseRecord[];
-
   onAddToCart: (item: any) => void;
-
   onUpdateCartQuantity: (itemName: string, quantity: number) => void;
-
+  onUpdateCartItemHaggleBonus: (itemName: string, bonusPercent: number) => void;
   onRemoveFromCart: (itemName: string) => void;
-
   onClearCart: () => void;
-
   onCompletePurchase: () => void;
-
   onUndoPurchase?: (purchaseId: number) => void;
-
   onUpdatePlayerMoney: (amount: number) => void;
+
+  // Buying props
+  buyingIsCharismaDropdownOpen: boolean;
+  setBuyingIsCharismaDropdownOpen: (open: boolean) => void;
+  onBuyingApologyPayment: () => void;
+  onBuyingCharismaCheck: () => void;
 }
 
 const InventorySection: React.FC<InventorySectionProps> = ({
   shopkeeper,
-
   settlementSize,
-
   isDarkMode,
-
   closeAllDropdowns,
-
   isCategoryDropdownOpen,
-
   setIsCategoryDropdownOpen,
-
   isSortDropdownOpen,
-
   setIsSortDropdownOpen,
-
   setShopkeeper,
-
   shopkeeperMood,
-
   playerCharisma,
-
+  onUpdatePlayerCharisma,
   getHagglingStyle,
 
+  // EXISTING haggling props
   isCartChangeReaction,
-
   cartChangeDescription,
-
   cartChangeQuote,
-
   isHaggleReaction,
-
   lastHaggleResult,
-
   currentHaggleQuote,
+  selectedMoodDesc,
+  selectedPersonalityDesc,
 
+  // EXISTING buying props
+  buyingHaggleAttempts,
+  buyingCurrentHaggleDC,
+  buyingIsHaggling,
+  buyingLastHaggleResult,
+
+  // ADD ALL THESE MISSING BUYING PROPS:
+  setBuyingHaggleAttempts,
+  setBuyingCurrentHaggleDC,
+  setBuyingIsHaggling,
+  setBuyingLastHaggleResult,
+  buyingRelationshipStatus,
+  setBuyingRelationshipStatus,
+  buyingCritFailCount,
+  setBuyingCritFailCount,
+  buyingIsLockedOut,
+  setBuyingIsLockedOut,
+  buyingApologyFee,
+  setBuyingApologyFee,
+  buyingLockoutReason,
+  setBuyingLockoutReason,
+  buyingHasTriedCharismaCheck,
+  setBuyingHasTriedCharismaCheck,
+  buyingHasHaggled,
+  setBuyingHasHaggled,
+  buyingLastHaggleWasSuccessful,
+  setBuyingLastHaggleWasSuccessful,
+  buyingIsCharismaDropdownOpen,
+  setBuyingIsCharismaDropdownOpen,
+  onBuyingApologyPayment,
+  onBuyingCharismaCheck,
+  resetBuyingHaggleState,
+  onUpdateCartItemHaggleBonus,
+
+  // EXISTING cart props
   cartItems,
-
   playerMoney,
-
   recentPurchases = [],
-
   onAddToCart,
-
   onUpdateCartQuantity,
-
   onRemoveFromCart,
-
   onClearCart,
-
   onCompletePurchase,
-
   onUndoPurchase,
-
   onUpdatePlayerMoney,
+  onAttemptBuyingHaggle,
+  calculateCartTotal,
+  calculateOriginalCartTotal,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState("any");
 
@@ -293,6 +319,38 @@ const InventorySection: React.FC<InventorySectionProps> = ({
     return Array.from(categories).sort();
   };
 
+  const [goldInput, setGoldInput] = useState(Math.floor(playerMoney));
+  const [silverInput, setSilverInput] = useState(0);
+  const [copperInput, setCopperInput] = useState(0);
+
+  const handleBuyingApologyPayment = () => {
+    if (playerMoney >= buyingApologyFee) {
+      onUpdatePlayerMoney(playerMoney - buyingApologyFee);
+      setBuyingIsLockedOut(false);
+      setBuyingCritFailCount(0);
+      setBuyingHaggleAttempts(3);
+      setBuyingCurrentHaggleDC(15);
+      resetBuyingHaggleState();
+    }
+  };
+
+  const handleBuyingCharismaCheck = () => {
+    if (buyingHasTriedCharismaCheck) return;
+
+    setBuyingHasTriedCharismaCheck(true);
+    const roll = Math.floor(Math.random() * 20) + 1;
+    const total = roll + playerCharisma;
+
+    if (total >= 15) {
+      // Success - restore relations
+      setBuyingIsLockedOut(false);
+      setBuyingCritFailCount(0);
+      setBuyingHaggleAttempts(2); // Reduced attempts but not locked out
+      setBuyingCurrentHaggleDC(15);
+    }
+    // If failed, stay locked out
+  };
+
   // Combine and filter inventory
 
   const getCombinedInventory = () => {
@@ -359,33 +417,81 @@ const InventorySection: React.FC<InventorySectionProps> = ({
               </span>
             </button>
 
-            {/* Player Gold Input - Improved */}
-
+            {/* Player Money Input - Updated for Gold/Silver/Copper */}
             <div className="flex items-center gap-2">
-              <span className="text-sm text-stone-600 dark:text-gray-300">
-                Your Gold
-              </span>
+  <span className="text-sm text-stone-600 dark:text-gray-300">
+    $
+  </span>
+  
+  <div className="inline-flex items-center gap-1">
+    {/* Gold Input */}
+    <div className="inline-flex items-center bg-stone-50 dark:bg-gray-600 border border-stone-300 dark:border-gray-500 rounded-md px-2 py-1">
+      <span
+        className="material-symbols-outlined text-amber-500"
+        style={{ fontSize: "14px" }}
+      >
+        poker_chip
+      </span>
+      <input
+    type="number"
+    value={goldInput}
+    onChange={(e) => {
+      const newGold = Math.max(0, parseInt(e.target.value) || 0);
+      setGoldInput(newGold);
+      onUpdatePlayerMoney(newGold + silverInput/10 + copperInput/100);
+    }}
+    onFocus={(e) => e.target.select()}  // ✅ Select all on focus
+    className="w-8 bg-transparent text-xs font-medium text-stone-700 dark:text-gray-200 text-center focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+    min="0"
+  />
+      <span className="text-xs text-stone-500 dark:text-gray-400"></span>
+    </div>
 
-              <div className="flex items-center bg-stone-50 dark:bg-gray-600 border border-stone-300 dark:border-gray-500 rounded-md px-3 py-1">
-                <span
-                  className="material-symbols-outlined text-amber-500 mr-1"
-                  style={{ fontSize: "16px" }}
-                >
-                  monetization_on
-                </span>
+    {/* Silver Input */}
+    <div className="inline-flex items-center bg-stone-50 dark:bg-gray-600 border border-stone-300 dark:border-gray-500 rounded-md px-2 py-1">
+      <span
+        className="material-symbols-outlined text-gray-400"
+        style={{ fontSize: "14px" }}
+      >
+        poker_chip
+      </span>
+       <input
+    type="number"
+    value={silverInput}
+    onChange={(e) => {
+      const newSilver = Math.max(0, parseInt(e.target.value) || 0);
+      setSilverInput(newSilver);
+      onUpdatePlayerMoney(goldInput + newSilver/10 + copperInput/100);
+    }}
+    onFocus={(e) => e.target.select()}  // ✅ Select all on focus
+    className="w-8 bg-transparent text-xs font-medium text-stone-700 dark:text-gray-200 text-center focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+    min="0"
+  />
+      <span className="text-xs text-stone-500 dark:text-gray-400"></span>
+    </div>
 
-                <input
-                  type="number"
-                  value={playerMoney}
-                  onChange={(e) =>
-                    onUpdatePlayerMoney(
-                      Math.max(0, parseInt(e.target.value) || 0)
-                    )
-                  }
-                  className="w-16 bg-transparent text-sm font-medium text-stone-700 dark:text-gray-200 text-center focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  min="0"
-                  placeholder="0"
-                />
+    {/* Copper Input */}
+    <div className="inline-flex items-center bg-stone-50 dark:bg-gray-600 border border-stone-300 dark:border-gray-500 rounded-md px-2 py-1">
+      <span
+        className="material-symbols-outlined text-yellow-700"
+        style={{ fontSize: "14px" }}
+      >
+        poker_chip
+      </span>
+      <input
+    type="number"
+    value={copperInput}
+    onChange={(e) => {
+      const newCopper = Math.max(0, parseInt(e.target.value) || 0);
+      setCopperInput(newCopper);
+      onUpdatePlayerMoney(goldInput + silverInput/10 + newCopper/100);
+    }}
+    onFocus={(e) => e.target.select()}  // ✅ Select all on focus
+    className="w-8 bg-transparent text-xs font-medium text-stone-700 dark:text-gray-200 text-center focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+    min="0"
+  />
+      <span className="text-xs text-stone-500 dark:text-gray-400"></span>
+                </div>
               </div>
             </div>
           </div>
@@ -510,19 +616,15 @@ const InventorySection: React.FC<InventorySectionProps> = ({
             <span className="whitespace-nowrap">sorted by</span>
 
             {/* Sort Dropdown */}
-
             <div className="relative inline-block">
               <button
                 onClick={() => {
                   console.log("Sort button clicked!");
-
                   console.log(
                     "Current isSortDropdownOpen:",
                     isSortDropdownOpen
                   );
-
                   closeAllDropdowns();
-
                   setIsSortDropdownOpen(!isSortDropdownOpen);
                 }}
                 className={buttonStyles.dropdown}
@@ -553,25 +655,19 @@ const InventorySection: React.FC<InventorySectionProps> = ({
                     {[
                       {
                         value: "alpha",
-
                         label: "Alphabetical",
-
                         icon: "sort_by_alpha",
                       },
 
                       {
                         value: "price-asc",
-
                         label: "Price: Low to High",
-
                         icon: "trending_up",
                       },
 
                       {
                         value: "price-desc",
-
                         label: "Price: High to Low",
-
                         icon: "trending_down",
                       },
                     ].map((option) => (
@@ -579,9 +675,7 @@ const InventorySection: React.FC<InventorySectionProps> = ({
                         <button
                           onClick={() => {
                             closeAllDropdowns();
-
                             setInventorySort(option.value);
-
                             setIsSortDropdownOpen(false);
                           }}
                           className={`block w-full text-left px-3 py-1.5 hover:bg-stone-100 dark:hover:bg-gray-600 text-stone-600 dark:text-gray-300 font-medium inter uppercase tracking-wider ${
@@ -631,7 +725,6 @@ const InventorySection: React.FC<InventorySectionProps> = ({
       </div>
 
       {/* Shopping Cart */}
-
       <ShoppingCart
         cartItems={cartItems}
         shopkeeper={shopkeeper}
@@ -641,6 +734,24 @@ const InventorySection: React.FC<InventorySectionProps> = ({
         onCompletePurchase={onCompletePurchase}
         onClearCart={onClearCart}
         isDarkMode={isDarkMode}
+        // CORRECT haggling props
+        playerCharisma={playerCharisma}
+        onUpdateCharisma={onUpdatePlayerCharisma}
+        buyingHaggleAttempts={buyingHaggleAttempts}
+        buyingIsHaggling={buyingIsHaggling}
+        buyingLastHaggleResult={buyingLastHaggleResult} // ✅ CORRECT PROP
+        recentPurchases={recentPurchases}
+        onAttemptHaggle={onAttemptBuyingHaggle} // ✅ Use prop from ShopkeeperApp
+        onUndoPurchase={onUndoPurchase}
+        calculateCartTotal={calculateCartTotal}
+        calculateOriginalCartTotal={calculateOriginalCartTotal}
+        // ADD lockout and apology props
+        buyingIsLockedOut={buyingIsLockedOut}
+        buyingLockoutReason={buyingLockoutReason}
+        buyingApologyFee={buyingApologyFee}
+        buyingHasTriedCharismaCheck={buyingHasTriedCharismaCheck}
+        onApologyPayment={onBuyingApologyPayment}
+        onCharismaCheck={onBuyingCharismaCheck}
       />
 
       {/* Recent Purchases - Similar to Recent Sales */}

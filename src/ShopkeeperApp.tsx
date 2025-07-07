@@ -156,7 +156,16 @@ function ShopkeeperGenerator() {
   const [buyingLastHaggleResult, setBuyingLastHaggleResult] = useState(null);
   const [buyingIsHaggling, setBuyingIsHaggling] = useState(false);
   const [recentPurchases, setRecentPurchases] = useState<PurchaseRecord[]>([]);
-  
+  const [buyingRelationshipStatus, setBuyingRelationshipStatus] = useState("reserved");
+  const [buyingCritFailCount, setBuyingCritFailCount] = useState(0);
+  const [buyingIsLockedOut, setBuyingIsLockedOut] = useState(false);
+  const [buyingApologyFee, setBuyingApologyFee] = useState(0);
+  const [buyingLockoutReason, setBuyingLockoutReason] = useState("");
+  const [buyingHasTriedCharismaCheck, setBuyingHasTriedCharismaCheck] = useState(false);
+  const [buyingHasHaggled, setBuyingHasHaggled] = useState(false);
+  const [buyingLastHaggleWasSuccessful, setBuyingLastHaggleWasSuccessful] = useState(null);
+  const [buyingIsCharismaDropdownOpen, setBuyingIsCharismaDropdownOpen] = useState(false);
+    
   // Selling system state
 
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -249,15 +258,46 @@ const addToCart = (item: any) => {
           : cartItem
       );
     } else {
-      return [...prev, {
-        name: item.name,
-        quantity: 1,
-        level: item.level || "Common",
-        price: item.price,
-        adjustedPrice: item.adjustedPrice || item.price,
-        basePrice: item.basePrice || item.price,
-        details: item.details
-      }];
+// Enhanced function to parse complex currency HTML
+const parseComplexCurrencyToGold = (currencyStr) => {
+  if (!currencyStr) return 0;
+  
+  let total = 0;
+  
+  // Extract gold
+  const goldMatch = currencyStr.match(/gold-icon[^>]*>poker_chip<\/span>(\d+)/);
+  if (goldMatch) total += parseInt(goldMatch[1]);
+  
+  // Extract silver (convert to gold)
+  const silverMatch = currencyStr.match(/silver-icon[^>]*>poker_chip<\/span>(\d+)/);
+  if (silverMatch) total += parseInt(silverMatch[1]) / 10;
+  
+  // Extract copper (convert to gold)
+  const copperMatch = currencyStr.match(/copper-icon[^>]*>poker_chip<\/span>(\d+)/);
+  if (copperMatch) total += parseInt(copperMatch[1]) / 100;
+  
+  // If no HTML matches found, fall back to the original parsePriceToGold
+  if (total === 0) {
+    total = parsePriceToGold(currencyStr);
+  }
+  
+  return total;
+};
+
+// Store calculation values using the enhanced parser
+const itemGoldValue = parseComplexCurrencyToGold(item.adjustedPrice || item.price);
+const baseGoldValue = parseComplexCurrencyToGold(item.basePrice || item.price);
+return [...prev, {
+  name: item.name,
+  quantity: 1,
+  level: item.level || "Common",
+  price: item.price,
+  adjustedPrice: item.adjustedPrice || item.price,
+  basePrice: item.basePrice || item.price,
+  priceValue: itemGoldValue,        // This should be 28.75 for your acid vial
+  basePriceValue: baseGoldValue,    // This should also be properly calculated
+  details: item.details
+}];
     }
   });
 };
@@ -301,12 +341,12 @@ const enhancedCompletePurchase = () => {
   }, 0);
 
   const finalTotal = cartItems.reduce((total, item) => {
-    const basePrice = parsePriceToGold(item.adjustedPrice || item.price);
-    const charismaMultiplier = 1 - (playerCharisma * 0.05);
-    const haggleMultiplier = 1 - ((item.haggleBonus || 0) / 100);
-    const finalPrice = Math.max(basePrice * 0.1, basePrice * charismaMultiplier * haggleMultiplier);
-    return total + (finalPrice * item.quantity);
-  }, 0);
+  const basePrice = parsePriceToGold(item.adjustedPrice || item.price);
+  const charismaMultiplier = Math.max(0.1, 1 - (playerCharisma * 0.05));
+  const haggleMultiplier = Math.max(0.1, 1 - ((item.haggleBonus || 0) / 100));
+  const finalPrice = Math.max(basePrice * 0.1, basePrice * charismaMultiplier * haggleMultiplier);
+  return total + (finalPrice * item.quantity);
+}, 0);
   
   if (playerMoney >= finalTotal) {
     // ✅ Create properly typed purchase record:
@@ -440,54 +480,106 @@ const getDisplayMood = (baseMood: string, charisma: number): string => {
   };
 
   const attemptBuyingHaggle = () => {
-    if (buyingHaggleAttempts <= 0 || cartItems.length === 0) return;
+  if (buyingHaggleAttempts <= 0 || cartItems.length === 0 || buyingIsLockedOut) return;
 
-    setBuyingIsHaggling(true);
-    const roll = rollD20();
-    const total = roll + playerCharisma;
-    const success = total >= buyingCurrentHaggleDC;
+  setBuyingIsHaggling(true);
+  setBuyingHasHaggled(true);  // Track haggling occurred
+  
+  const roll = rollD20();
+  const total = roll + playerCharisma;
+  const success = total >= buyingCurrentHaggleDC;
 
-    let bonusPercent = 0;
-    let resultText = "";
-
-    if (roll === 20) {
-      // Critical success
-      bonusPercent = 25;
-      resultText = "Exceptional negotiation! Significant discount achieved!";
-    } else if (roll === 1) {
-      // Critical failure - shopkeeper increases prices
-      bonusPercent = -15;
-      resultText = "Terrible haggling! Shopkeeper is offended and raises prices!";
-    } else if (success) {
-      const successMargin = total - buyingCurrentHaggleDC;
-      bonusPercent = Math.floor(successMargin * 2) + 5; // 5-25% discount
-      resultText = "Successful haggling! You've negotiated a discount.";
-    } else {
-      bonusPercent = -5; // Small penalty
-      resultText = "Haggling failed. Shopkeeper is slightly annoyed.";
-    }
-
-    // Apply bonus/penalty to all cart items
-    setCartItems(prev =>
-      prev.map(item => ({
-        ...item,
-        haggleBonus: (item.haggleBonus || 0) + bonusPercent
-      }))
-    );
+  // Check for critical failure (natural 1) - MATCH SELLING EXACTLY
+  if (roll === 1) {
+    const fee = Math.floor(cartItems.reduce((total, item) => {
+      const itemPrice = parsePriceToGold(item.adjustedPrice || item.price);
+      return total + itemPrice * item.quantity;
+    }, 0) * 0.15); // 15% of cart total (similar to selling's calculateApologyFee logic)
+    
+    setBuyingApologyFee(fee);
+    setBuyingIsLockedOut(true);
+    setBuyingCritFailCount((prev) => prev + 1);
+    setBuyingRelationshipStatus("offended");
+    setBuyingLockoutReason(`You've gravely insulted ${shopkeeper.name.split(" ")[0]}!`);
 
     setBuyingLastHaggleResult({
       roll,
       total,
       dc: buyingCurrentHaggleDC,
-      success,
-      bonusPercent,
-      resultText
+      success: false,
+      bonusPercent: 0,
+      resultText: `Critical failure! ${shopkeeper.name.split(" ")[0]} is deeply offended by your negotiation attempt.`,
     });
+    setBuyingHaggleAttempts(buyingHaggleAttempts - 1);
+    setTimeout(() => setBuyingIsHaggling(false), 1000);
+    return;
+  }
 
-    setBuyingHaggleAttempts(prev => prev - 1);
-    setBuyingCurrentHaggleDC(prev => prev + 2);
-    setBuyingIsHaggling(false);
-  };
+  let bonusPercent = 0;
+  let resultText = "";
+  let newRelationship = buyingRelationshipStatus;
+
+  if (success) {
+    const successMargin = total - buyingCurrentHaggleDC;
+
+    // Check for critical success (natural 20) - MATCH SELLING
+    if (roll === 20) {
+      bonusPercent = 25;  // Higher discount for buying (vs 20% bonus for selling)
+      resultText = `Critical success! ${shopkeeper.name.split(" ")[0]} is thoroughly impressed by your negotiation skills.`;
+      newRelationship = buyingRelationshipStatus === "reserved" ? "neutral" : 
+                       buyingRelationshipStatus === "neutral" ? "trusted" : buyingRelationshipStatus;
+      setBuyingLastHaggleWasSuccessful(true);
+    } else if (successMargin >= 10) {
+      bonusPercent = 15;
+      resultText = `Excellent haggling! ${shopkeeper.name.split(" ")[0]} is impressed.`;
+      setBuyingLastHaggleWasSuccessful(true);
+    } else if (successMargin >= 5) {
+      bonusPercent = 10;
+      resultText = `Good negotiation. ${shopkeeper.name.split(" ")[0]} nods approvingly.`;
+      setBuyingLastHaggleWasSuccessful(true);
+    } else {
+      bonusPercent = 5;
+      resultText = `Decent argument. ${shopkeeper.name.split(" ")[0]} considers your point.`;
+      setBuyingLastHaggleWasSuccessful(true);
+    }
+  } else {
+    // Failed haggle - MATCH SELLING'S PENALTY SYSTEM
+    const failureMargin = buyingCurrentHaggleDC - total;
+    if (failureMargin >= 10) {
+      bonusPercent = -10; // Heavy penalty for bad failure
+      resultText = `Poor attempt. ${shopkeeper.name.split(" ")[0]} is annoyed and raises prices.`;
+      newRelationship = buyingRelationshipStatus === "trusted" ? "neutral" :
+                       buyingRelationshipStatus === "neutral" ? "annoyed" : buyingRelationshipStatus;
+    } else {
+      bonusPercent = -5; // Light penalty for close failure
+      resultText = `Nice try, but ${shopkeeper.name.split(" ")[0]} isn't convinced and raises prices slightly.`;
+    }
+    setBuyingLastHaggleWasSuccessful(false);
+  }
+
+  setBuyingLastHaggleResult({
+    roll,
+    total,
+    dc: buyingCurrentHaggleDC,
+    success,
+    bonusPercent,
+    resultText,
+  });
+
+  setBuyingHaggleAttempts((prev) => prev - 1);
+  setBuyingCurrentHaggleDC((prev) => prev + 2);
+  setBuyingRelationshipStatus(newRelationship);
+
+  // Apply bonus/penalty to all cart items
+  setCartItems((prev) =>
+    prev.map((item) => ({
+      ...item,
+      haggleBonus: (item.haggleBonus || 0) + bonusPercent,
+    }))
+  );
+
+  setTimeout(() => setBuyingIsHaggling(false), 1000);
+};
 
   const resetHaggleState = () => {
   const hadHaggling = hasHaggled;
@@ -547,8 +639,6 @@ useEffect(() => {
     return originalItem ? originalItem.price : null;
   };
 
-  // In ShopkeeperApp.tsx, replace your addItemToSell function with this debug version:
-
 const addItemToSell = (item) => {
   console.log('🔍 ShopkeeperApp addItemToSell called with:', item);
   console.log('🔍 Current sellingItems before update:', sellingItems);
@@ -595,7 +685,7 @@ const addItemToSell = (item) => {
         marketPrice = item.price;
       }
 
-      const itemGoldValue = parsePriceToGold(marketPrice);
+      const itemGoldValue = parsePriceToGold(item.adjustedPrice || item.price);
 
       const newItem = {
         ...item,
@@ -1471,6 +1561,46 @@ useEffect(() => {
     }
   }, [settlementSize, shopkeeper?.shopType]);
 
+  // Haggling mechanics
+  const handleBuyingApologyPayment = () => {
+  if (playerMoney >= buyingApologyFee) {
+    setPlayerMoney(prev => prev - buyingApologyFee);
+    setBuyingIsLockedOut(false);
+    setBuyingCritFailCount(0);
+    setBuyingHaggleAttempts(3);
+    resetBuyingHaggleState();
+  }
+};
+
+const handleBuyingCharismaCheck = () => {
+  if (buyingHasTriedCharismaCheck) return;
+  setBuyingHasTriedCharismaCheck(true);
+  const roll = Math.floor(Math.random() * 20) + 1;
+  const total = roll + playerCharisma;
+  if (total >= 15) {
+    setBuyingIsLockedOut(false);
+    setBuyingCritFailCount(0);
+    setBuyingHaggleAttempts(2);
+  }
+};
+
+const resetBuyingHaggleState = () => {
+  setBuyingHaggleAttempts(3);
+  const hagglingStyle = getHagglingStyle(settlementSize, shopkeeper.priceModifier);
+  setBuyingCurrentHaggleDC(10 + hagglingStyle.dcModifier);
+  setBuyingLastHaggleResult(null);
+  setBuyingHasHaggled(false);
+  setBuyingLastHaggleWasSuccessful(null);
+};
+
+const undoPurchase = (purchaseId) => {
+  const purchase = recentPurchases.find(p => p.id === purchaseId);
+  if (!purchase) return;
+  setPlayerMoney(prev => prev + purchase.finalTotal);
+  setRecentPurchases(prev => prev.filter(p => p.id !== purchaseId));
+};
+
+
   // Effect to close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -1621,11 +1751,11 @@ useEffect(() => {
     cartChangeDescription={cartChangeDescription}
     cartChangeQuote={cartChangeQuote}
     isHaggleReaction={isHaggleReaction}
-    lastHaggleResult={lastHaggleResult}
+    buyingLastHaggleResult={buyingLastHaggleResult}
     currentHaggleQuote={currentHaggleQuote}
     selectedMoodDesc={selectedMoodDesc}
     selectedPersonalityDesc={selectedPersonalityDesc}
-     cartItems={cartItems}
+    cartItems={cartItems}
     playerMoney={playerMoney}
     onAddToCart={addToCart}
     onUpdateCartQuantity={updateCartQuantity}
@@ -1635,9 +1765,85 @@ useEffect(() => {
     onUpdatePlayerMoney={setPlayerMoney}
     buyingHaggleAttempts={buyingHaggleAttempts}
     buyingIsHaggling={buyingIsHaggling}
-    buyingLastHaggleResult={buyingLastHaggleResult}
     recentPurchases={recentPurchases}
     onAttemptBuyingHaggle={attemptBuyingHaggle}
+    buyingRelationshipStatus={buyingRelationshipStatus}
+    setBuyingRelationshipStatus={setBuyingRelationshipStatus}
+    buyingCritFailCount={buyingCritFailCount}
+     setBuyingHaggleAttempts={setBuyingHaggleAttempts}
+    setBuyingCurrentHaggleDC={setBuyingCurrentHaggleDC}
+    setBuyingLastHaggleResult={setBuyingLastHaggleResult}
+    setBuyingIsHaggling={setBuyingIsHaggling}
+    buyingCurrentHaggleDC={buyingCurrentHaggleDC}
+    setBuyingCritFailCount={setBuyingCritFailCount}
+    buyingIsLockedOut={buyingIsLockedOut}
+    setBuyingIsLockedOut={setBuyingIsLockedOut}
+    buyingApologyFee={buyingApologyFee}
+    setBuyingApologyFee={setBuyingApologyFee}
+    buyingLockoutReason={buyingLockoutReason}
+    setBuyingLockoutReason={setBuyingLockoutReason}
+    buyingHasTriedCharismaCheck={buyingHasTriedCharismaCheck}
+    setBuyingHasTriedCharismaCheck={setBuyingHasTriedCharismaCheck}
+    buyingHasHaggled={buyingHasHaggled}
+    setBuyingHasHaggled={setBuyingHasHaggled}
+    buyingLastHaggleWasSuccessful={buyingLastHaggleWasSuccessful}
+    setBuyingLastHaggleWasSuccessful={setBuyingLastHaggleWasSuccessful}
+    buyingIsCharismaDropdownOpen={buyingIsCharismaDropdownOpen}
+    setBuyingIsCharismaDropdownOpen={setBuyingIsCharismaDropdownOpen}
+    onBuyingApologyPayment={handleBuyingApologyPayment}
+    onBuyingCharismaCheck={handleBuyingCharismaCheck}
+    resetBuyingHaggleState={resetBuyingHaggleState}
+    onUndoPurchase={undoPurchase}
+
+    calculateCartTotal={() => {
+  console.log("=== CALCULATE BUYING CART TOTAL DEBUG ===");
+  console.log("Cart items:", cartItems);
+
+  // Use pre-calculated priceValue instead of re-parsing
+  const baseTotalFromAdjustedPrices = cartItems.reduce((total, item) => {
+    // Use priceValue if available, otherwise fall back to parsing
+    const itemPriceGold = item.priceValue || parsePriceToGold(item.adjustedPrice || item.price || "0");
+    const subtotal = itemPriceGold * item.quantity;
+    console.log(`Item ${item.name}:`, {
+      priceValue: item.priceValue,
+      adjustedPrice: item.adjustedPrice,
+      priceGold: itemPriceGold,
+      quantity: item.quantity,
+      subtotal: subtotal,
+    });
+    return total + subtotal;
+  }, 0);
+
+  console.log("Base total from adjusted prices:", baseTotalFromAdjustedPrices);
+
+  // Apply charisma discount
+  const charismaDiscountPercent = playerCharisma * 5;
+  const charismaMultiplier = Math.max(0.1, 1 - (charismaDiscountPercent / 100));
+
+  // Apply average haggle bonus/penalty
+  const totalHaggleBonus = cartItems.reduce((sum, item) => {
+    return sum + (item.haggleBonus || 0);
+  }, 0);
+  const avgHaggleBonus = cartItems.length > 0 ? totalHaggleBonus / cartItems.length : 0;
+  const haggleMultiplier = Math.max(0.1, 1 - (avgHaggleBonus / 100));
+
+  const finalMultiplier = charismaMultiplier * haggleMultiplier;
+  const finalTotal = Math.max(
+    baseTotalFromAdjustedPrices * 0.1,
+    baseTotalFromAdjustedPrices * finalMultiplier
+  );
+
+  console.log("Final buying total:", finalTotal);
+  return finalTotal;
+}}
+  
+  calculateOriginalCartTotal={() => {
+  return cartItems.reduce((total, item) => {
+    // Use basePriceValue if available, otherwise fall back to parsing
+    const originalPriceGold = item.basePriceValue || parsePriceToGold(item.basePrice || item.price || "0");
+    return total + (originalPriceGold * item.quantity);
+  }, 0);
+}}
   />
 )}
 

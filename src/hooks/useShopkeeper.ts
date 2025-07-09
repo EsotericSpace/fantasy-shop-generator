@@ -189,24 +189,23 @@ export const useShopkeeper = () => {
         : customShopType;
 
     if (isLocked && shopkeeper) {
-      if (!shopkeeper.priceModifier || !shopkeeper.name) {
-        console.warn("Corrupt locked shopkeeper. Resetting.");
-        setIsLocked(false);
-        generateShopkeeper("random", customSettlementSize, pricingStylePreference);
-        return;
-      }
-
-      // Handle pricing for locked shopkeeper
-      let pricingStyleObj;
-      let actualStyleIndex;
-      if (pricingStylePreference === "random") {
-        actualStyleIndex = Math.floor(Math.random() * pricingStyles.length);
-        pricingStyleObj = pricingStyles[actualStyleIndex];
-      } else {
-        actualStyleIndex = parseInt(pricingStylePreference);
-        pricingStyleObj = pricingStyles[actualStyleIndex];
-      }
-      const priceModifier = pricingStyleObj.modifier;
+  if (typeof shopkeeper.priceModifier !== 'number' || !shopkeeper.name) {
+    console.warn("Corrupt locked shopkeeper. Resetting.");
+    setIsLocked(false);
+    setLockedShopkeeperIdentity(null);
+    // Fall through to normal generation below
+  } else {
+    // Handle pricing for locked shopkeeper
+    let pricingStyleObj;
+    let actualStyleIndex;
+    if (pricingStylePreference === "random") {
+      actualStyleIndex = Math.floor(Math.random() * pricingStyles.length);
+      pricingStyleObj = pricingStyles[actualStyleIndex];
+    } else {
+      actualStyleIndex = parseInt(pricingStylePreference);
+      pricingStyleObj = pricingStyles[actualStyleIndex];
+    }
+    const priceModifier = pricingStyleObj.modifier;
 
       const limits = getInventoryLimits(customSettlementSize);
       const selectedCommonItems = generateCommonItems(
@@ -275,6 +274,7 @@ export const useShopkeeper = () => {
       setSelectedPricingStyle(actualStyleIndex.toString());
       return;
     }
+  }
 
     let name, race;
 

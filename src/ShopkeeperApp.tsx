@@ -84,6 +84,7 @@ import {
   LockKeyIcon,
   LockKeyOpenIcon,
 } from "@phosphor-icons/react";
+import { DARK_MODE_KEY } from "./consts/localStorage.tsx";
 
 const PhosphorIcon = ({ icon: Icon, weight = "thin", size = 20, ...props }) => (
   <Icon weight={weight} size={size} {...props} />
@@ -146,9 +147,7 @@ function ShopkeeperGenerator() {
   const [inventorySort, setInventorySort] = useState("alpha");
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(true);
-
+  const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem(DARK_MODE_KEY) === 'true');
 
   // Buying system state
 

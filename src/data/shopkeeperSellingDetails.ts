@@ -11,62 +11,160 @@ export const moodDescriptions: Record<string, string[]> = {
   welcoming: [
     "grins as you approach, the soft clink of coins already audible as {pronoun} counts in anticipation",
     "hums something low and rhythmic while arranging wares, breaking off mid-tune to greet you with a nod",
-    "leans forward slightly, sleeves rolled, eyes bright with the kind of interest that doesn’t need words",
-    "opens their coin purse and places it on the counter before you've said a thing. An unspoken gesture of trust",
-    "rubs {possessive} palms together with restrained glee, already shifting items aside to make space",
+    "leans forward slightly, sleeves rolled, eyes bright and already tracking what you're carrying",
+    "opens {possessive} coin purse and places it on the counter before you've said a thing",
+    "rubs {possessive} palms together and shifts items aside to make space for you",
   ],
   open: [
-    "rests an elbow on the counter, relaxed but attentive, eyes following your movements with easy familiarity",
-    "gives you a once-over, ending in a slow nod and a relaxed smile that welcomes words",
+    "rests an elbow on the counter, chin in hand, eyes following your movements around the shop",
+    "gives you a once-over, ending in a slow nod and a smile that settles into place",
     "lets the silence stretch as coins click in a practiced rhythm beneath {possessive} fingers",
-    "adjusts a small display without urgency, casually clearing a spot in front of you",
-    "offers a subtle gesture toward the scale. Welcoming, but without ceremony",
+    "adjusts a small display, one item at a time, clearing a spot in front of you",
+    "tips {possessive} chin toward the scale and waits for you to approach",
   ],
   reserved: [
-    "stands motionless behind the counter, gaze level, revealing nothing",
-    "folds {possessive} hands with careful precision, posture making space without invitation",
-    "watches without blinking, letting silence and stillness draw the line",
+    "stands motionless behind the counter, gaze level, hands flat on the wood",
+    "laces {possessive} fingers together on the counter, staring at you with a neutral expression",
+    "watches without blinking, letting silence and stillness fill the space between you",
     "tidies a corner of the ledger with quiet focus, eyes flicking up only once you’re fully still",
     "waits in studied quiet, letting your presence fill the room before acknowledging it",
   ],
   doubtful: [
-    "narrows {possessive} eyes slightly, like trying to see through fog. Or through you",
-    "tilts {possessive} head just enough to look skeptical, arms folded tight across the chest",
-    "shakes {possessive} head once, not as refusal. More as instinct",
-    "flicks a glance at your bag, lips pursed. Not yet impressed with you or your wares",
-    "drums a fingertip against the wood, impatient with your presence",
+    "narrows {possessive} eyes slightly, gaze fixed somewhere between your face and your intentions",
+    "tilts {possessive} head, arms folded tight across {possessive} chest, one finger tapping",
+    "shakes {possessive} head slow when you make eye contact before turning to go back to {possessive} tasks",
+    "flicks a glance at your bag, lips pursed, then back to your face",
+    "drums a fingertip against the counter, each tap a little louder than the last",
   ],
   dismissive: [
     "sighs loud enough to break the air between you, already turning slightly away",
-    "doesn’t bother to straighten up, letting the weight of {possessive} glance say it all",
-    "snaps a drawer shut harder than needed, the sharp sound enough to stall your next step",
-    "closes the ledger with a sharp snap and no effort to hide the annoyance",
+    "stays slouched against the back wall, eyes half-closed, chin low",
+    "snaps a drawer shut harder than needed. The sound carries throughout the shop",
+    "closes the ledger with a sharp snap and drops it flat on the counter",
     "scowls like someone who’s had this conversation before and expects nothing new from it",
   ],
 };
 
-export const personalityDescriptions: Record<string, string[]> = {
-  stingy: [
-    "maintains an immaculate workspace, each tool in perfect alignment, {possessive} ledger entries so crisp they could pass for calligraphy",
-    "keeps a magnifying glass and fine-tipped scale at the ready, built for detecting the smallest imperfections",
-    "stores coins in separate compartments by denomination, each stack counted twice before a single trade is made",
-    "pulls on white cotton gloves, each motion precise. The kind of movement that speaks of long habit and quiet respect for what’s handled",
-    "displays a hand-drawn chart with rates so exact, it feels like haggling would be a waste of breath",
-  ],
-  generous: [
-    "operates from a comfortably cluttered counter, where practical tools mingle with personal trinkets and small curiosities",
-    "keeps a worn leather pouch organized by feel alone, coins settling with the ease of long practice and quick hands",
-    "uses a simple balance scale that's seen years of honest use, weights smoothed by countless trades",
-    "keeps a dog-eared notebook filled with running tallies, the margins cluttered with scribbled notes only {pronoun} can decode",
-    "displays handwritten signs advertising bulk discounts and 'trader’s specials,' each one scrawled in uneven lettering and pinned wherever space allowed",
-  ],
-  standard: [
-    "operates from a clean, organized counter with standard merchant tools arranged in practical order",
-    "keeps a regulation-sized scale calibrated weekly, weights stored in a proper wooden case",
-    "keeps his ledger in neat, consistent script, each line notated with the crisp symbols of standard merchant trade",
-    "displays current exchange rates on a well-used slate board, the figures refreshed each morning to meet guild expectations",
-    "keeps {possessive} coins in a well-fitted strongbox, each stack aligned and accounted for before it ever leaves {possessive} hand",
-  ],
+// Second sentence of the shopkeeper's mood box: "{Pronoun} <description>."
+// Grouped by shop type, then by how the shopkeeper prices things:
+//   stingy   = charges more than 10% above market
+//   standard = within 10% of market
+//   generous = charges more than 10% below market
+// Each line should read naturally after "He"/"She". Placeholders:
+// {possessive} (his/her), {pronoun} (he/she), {object} (him/her), {reflexive}.
+// "default" is only used if a shop type below is missing or has an empty list.
+export const personalityDescriptions: Record<string, Record<string, string[]>> = {
+  default: {
+    stingy: [
+      "maintains an immaculate workspace, each tool in perfect alignment, {possessive} ledger entries so crisp they could pass for calligraphy",
+      "stores coins in separate compartments by denomination, each stack counted twice before a single trade is made",
+      "displays a hand-drawn chart with rates calculated to the half-copper, every figure double-checked in red ink",
+    ],
+    standard: [
+      "operates from a clean, organized counter with standard merchant tools arranged in practical order",
+      "keeps a regulation-sized scale calibrated weekly, weights stored in a proper wooden case",
+      "keeps {possessive} ledger in neat, consistent script, each line notated with the crisp symbols of standard merchant trade",
+      "displays current exchange rates on a well-used slate board, the figures refreshed each morning in {possessive} own hand",
+      "keeps {possessive} coins in a well-fitted strongbox, each stack aligned and accounted for before it ever leaves {possessive} hand",
+    ],
+    generous: [
+      "operates from a comfortably cluttered counter, where practical tools mingle with personal trinkets and small curiosities",
+      "keeps a worn leather pouch organized by feel alone, coins settling with the ease of long practice and quick hands",
+      "uses a simple balance scale that's seen years of honest use, weights smoothed by countless trades",
+      "keeps a dog-eared notebook filled with running tallies, the margins cluttered with scribbled notes only {pronoun} can decode",
+      "displays handwritten signs advertising bulk discounts and 'trader’s specials,' each one scrawled in uneven lettering and pinned wherever space allowed",
+    ],
+  },
+
+  "General Store": {
+    stingy: [
+      "counts out goods by the piece and totals them twice on a well-worn abacus",
+      "keeps a list of who owes what pinned behind the counter, several names underlined twice",
+    ],
+    standard: [
+      "keeps the shelves stocked in a familiar order that regulars could navigate blindfolded",
+      "wraps each purchase in brown paper and twine with practiced speed",
+    ],
+    generous: [
+      "rounds prices down to the nearest copper and shrugs off the difference",
+      "tucks a little extra treat into every order",
+    ],
+  },
+
+  Blacksmith: {
+    stingy: [
+      "weighs every ingot twice on a brass scale, noting each result in a soot-smudged ledger before naming a price",
+      "keeps finished blades racked by exact length, and frowns if you touch one without asking",
+    ],
+    standard: [
+      "wipes {possessive} hands on a leather apron before taking coin, the forge still ticking as it cools",
+      "keeps the day's rates chalked on a slate by the anvil, smudged by a thumb that's rewritten them often",
+    ],
+    generous: [
+      "keeps a bin of offcuts and bent nails by the door, marked 'free for the asking'",
+      "hands you a blade hilt-first and waits for you to test the balance before naming a price",
+    ],
+  },
+
+  Alchemist: {
+    stingy: [
+      "measures reagents to the grain, recording every dose in a leather-bound formulary",
+      "keeps the costliest vials behind glass, the key on a chain around {possessive} neck",
+    ],
+    standard: [
+      "labels every bottle in a tidy hand, with the date brewed and a warning where one is needed",
+      "keeps a pestle grinding in one hand while making change with the other",
+    ],
+    generous: [
+      "offers you a sniff of whatever's simmering, delighted to explain what it does",
+      "keeps a jar of slightly off-color tonics by the door, marked down for anyone brave enough to try",
+    ],
+  },
+
+  "Mystic Goods": {
+    stingy: [
+      "handles each curio with silk-wrapped fingers, reciting its provenance before discussing price",
+      "consults a small brass pendulum before agreeing to any deal",
+    ],
+    standard: [
+      "keeps incense burning at a steady pace, trimming the wick between customers",
+      "arranges charms on a chalked board according to the phases of the moon",
+    ],
+    generous: [
+      "reads your palm while you browse, whether you asked or not",
+      "presses a small charm into your hand for luck, refusing payment",
+    ],
+  },
+
+  "Exotic Goods": {
+    stingy: [
+      "names each item's port of origin and the cost of shipping it, as if daring you to haggle",
+      "keeps the rarer pieces under oilcloth, revealing them only to buyers who look serious",
+    ],
+    standard: [
+      "keeps a map tacked behind the counter, pins marking where each shipment came from",
+      "switches between three trade tongues without missing a beat",
+    ],
+    generous: [
+      "trades stories as readily as goods, each more improbable than the last",
+      "offers you a taste of dried fruit from somewhere you've never heard of",
+    ],
+  },
+
+  Jeweler: {
+    stingy: [
+      "keeps a loupe and fine-tipped scale at the ready, built for detecting the smallest imperfections",
+      "pulls on white cotton gloves before touching anything, each motion precise enough to handle a pixie's wing",
+    ],
+    standard: [
+      "polishes a ring on a soft cloth while talking, holding it to the light between sentences",
+      "keeps each piece in a velvet-lined tray, labeled with its weight and stone",
+    ],
+    generous: [
+      "lets you try on anything in the case, happily fetching a hand mirror",
+      "keeps a tray of glass and paste trinkets priced for any purse",
+    ],
+  },
 };
 
 /**
@@ -81,10 +179,17 @@ export const getMoodDescription = (mood: string): string => {
 };
 
 /**
- * Get a random personality description for the given personality type
+ * Get a random personality description for the given personality type and shop type
  */
-export const getPersonalityDescription = (personalityType: string): string => {
-  const descriptions = personalityDescriptions[personalityType];
+export const getPersonalityDescription = (
+  personalityType: string,
+  shopType?: string
+): string => {
+  const forShop = shopType ? personalityDescriptions[shopType]?.[personalityType] : undefined;
+  const descriptions =
+    forShop && forShop.length > 0
+      ? forShop
+      : personalityDescriptions.default[personalityType];
   if (!descriptions || descriptions.length === 0) {
     return "follows standard market rates";
   }
@@ -120,12 +225,13 @@ export const getPersonalityType = (priceModifier: number): string => {
 export const getShopkeeperDescriptions = (
   mood: string,
   priceModifier: number,
-  pronouns: ShopkeeperPronouns
+  pronouns: ShopkeeperPronouns,
+  shopType?: string
 ): { moodDescription: string; personalityDescription: string } => {
   const personalityType = getPersonalityType(priceModifier);
 
   const rawMoodDesc = getMoodDescription(mood);
-  const rawPersonalityDesc = getPersonalityDescription(personalityType);
+  const rawPersonalityDesc = getPersonalityDescription(personalityType, shopType);
 
   return {
     moodDescription: processDescriptionText(rawMoodDesc, pronouns),
@@ -140,7 +246,7 @@ export const haggleQuotes: Record<string, Record<string, string[]>> = {
   criticalSuccess: {
     stingy: [
       "By the time I caught the flaw in your logic, I’d already agreed. Well played.",
-      "I’ve outmaneuvered kings for less. You? You had me by the second sentence.",
+      "I've outmaneuvered kings for less. But you? Second sentence in and I'd already agreed.",
       "That was a surgical strike. Take the deal before I come to my senses.",
       "You've dismantled my position like a master crafter strips rust from silver. The offer stands.",
       "Remarkable. I pride myself on discipline, and still—you carved through me clean.",
@@ -148,16 +254,16 @@ export const haggleQuotes: Record<string, Record<string, string[]>> = {
     generous: [
       "That was brilliant! You haggled like it was your calling.",
       "You’ve got the kind of spark this world tries to snuff out. I’m glad it didn’t.",
-      "That was a joy to watch. Makes me feel lucky just to be part of it.",
+      "That was the most beautiful speech I've ever heard. Well-deserved discount.",
       "I haven’t been talked into a deal like that since my first market stall.",
-      "You make it look easy—and I know it’s not. You’ve earned this and then some.",
+      "I must say I'm impressed how easy you made that look. You’ve earned this and then some.",
     ],
     standard: [
-      "You made your case with clean logic and solid footing. There’s no arguing that.",
-      "That was tidy, thorough, and well-structured. I respect that.",
-      "Your reasoning holds at every angle. The deal improves accordingly.",
-      "You came prepared and delivered. That’s all I ever ask.",
-      "Can’t fault a single word of that. It’s yours.",
+      "You made your case with impeccable logic. I'm inclined to agree with you on the pricing.",
+      "Every point landed where it needed to. I can't say no to good logic.",
+      "That's a rock-solid argument. I can definitely bend the pricing your way.",
+      "I'm impressed. You came prepared and delivered hard. Here's a little bonus.",
+      "Wow, I can’t fault a single word of that. It’s yours.",
     ],
   },
 
@@ -177,10 +283,10 @@ export const haggleQuotes: Record<string, Record<string, string[]>> = {
       "Well argued! Not perfect, but worth a friendlier price.",
     ],
     standard: [
-      "Good argument. The numbers shift in your favor.",
+      "Good argument. I'll move the price your way.",
       "You’ve earned a more favorable rate by merit, not luck.",
-      "Solid points. I’m revising the offer accordingly.",
-      "Your reasoning holds. Let's improve the terms.",
+      "Those are some solid points. I’m convinced to give you a better number.",
+      "I can't think of any flaws in your reasoning. Let me improve the price.",
       "That’s fair. Here’s a better deal to match it.",
     ],
   },
@@ -188,10 +294,10 @@ export const haggleQuotes: Record<string, Record<string, string[]>> = {
   moderateSuccess: {
     stingy: [
       "You’ve made just enough sense to make me uncomfortable. Fine. A small shift.",
-      "You’re not wrong, but you’re not convincing either. A modest concession.",
+      "You’re not wrong, but you’re not convincing either. I can afford a modest concession.",
       "Hmm. I’ll give you a sliver of ground, but don’t expect applause.",
       "There’s logic in there somewhere. I’ll adjust, but only slightly.",
-      "You’ve earned the faintest nod of approval. Here’s your minor improvement.",
+      "You've earned the faintest nod. Here's your minor improvement.",
     ],
     generous: [
       "You’ve got the right idea. Let me nudge the offer in your favor.",
@@ -201,17 +307,17 @@ export const haggleQuotes: Record<string, Record<string, string[]>> = {
       "Decent case! Not your strongest, but strong enough to matter.",
     ],
     standard: [
-      "Reasonable enough. I’ll make a minor adjustment.",
-      "You’ve shown some logic. Small concession granted.",
-      "That was measured. The deal gets a touch better.",
-      "Fair points. Nothing groundbreaking, but worth a revision.",
-      "You’ve made your case. Here’s a slight improvement.",
+      "Reasonable enough. I’ll trim the price a little bit.",
+      "You’ve got some logic there. I'm considering a small concession now.",
+      "That was a measured approach. I can make the deal a touch better.",
+      "Fair enough to make a small revision.",
+      "You’ve made a decent case. I can make a slight improvement to the pricing.",
     ],
   },
 
   minorSuccess: {
     stingy: [
-      "Fine. A thread of logic exists in there somewhere. A tiny adjustment, then.",
+      "A thread of logic exists in there somewhere. I suppose I can accommodate a tiny price adjustment.",
       "You’re not completely off base. I’ll shave a sliver off the price.",
       "You scraped by with that one. Don’t expect generosity.",
       "I’ll allow the faintest discount, if only to end the conversation.",
@@ -225,11 +331,11 @@ export const haggleQuotes: Record<string, Record<string, string[]>> = {
       "Effort counts. Let me sweeten this just a bit.",
     ],
     standard: [
-      "There’s some merit in that. Minor adjustment granted.",
-      "Adequate case. The offer improves slightly.",
-      "That holds water...barely. I’ll revise the rate by a hair.",
-      "Acceptable reasoning. Here’s a small improvement.",
-      "That was passable. You’ve earned a modest revision.",
+      "There’s some logic somewhere in there. Enough to change my mind a bit.",
+      "Yeah, sure. You make enough of a case to move me.",
+      "That holds water...barely. I’ll revise the rate a hair.",
+      "You have acceptable reasoning. I can work with that.",
+      "Mhm, okay. I can kind of see your point enough to give you a minor revision.",
     ],
   },
 
@@ -250,33 +356,33 @@ export const haggleQuotes: Record<string, Record<string, string[]>> = {
     ],
     standard: [
       "That sounded rehearsed. I’m lowering the offer. Come with cleaner logic next time.",
-      "You pushed too far. The numbers don’t support the claim.",
-      "Almost made it stick, but there’s a flaw. The offer takes a hit.",
-      "When the logic crumbles, so does the rate. Minor deduction.",
-      "That stretch didn’t help your case. Offer reduced accordingly.",
+      "Yeah, you pushed it a bit too far. Your numbers aren't adding up.",
+      "That...almost made sense. I think you lost the plot, so I'm not buying it.",
+      "Your logic fell apart halfway through your argument. I'm marking the price up.",
+      "That's quite the stretch. My offer is now worse as a result of your bad logic.",
     ],
   },
 
   majorFailure: {
     stingy: [
-      "You think I’ve never seen a bluff before? The offer drops. Hard.",
+      "You think I’ve never seen a bluff before? I'm dropping the offer. Hard.",
       "Insult my intelligence again and I’ll stop dealing with you entirely.",
       "That was bold, and not in the good way. You’ve cost yourself dearly.",
       "Clever lies aren’t clever when they’re obvious. Enjoy your penalty.",
-      "You reached too far and broke the deal. The new offer reflects that.",
+      "You reached too far and broke my trust. This new offer reflects that.",
     ],
     generous: [
       "That didn’t just miss, it stung. I’ve got to pull the offer back, hard.",
       "You nearly had me, then ruined it with that. I'm genuinely disappointed.",
-      "That felt dishonest. I have to revise this down. More than I’d like to.",
+      "That felt dishonest. I have to revise this down more than I'd like.",
       "You took a kind offer and twisted it. I can’t let that stand.",
-      "I hoped for better from you. The offer worsens, and I mean that sincerely.",
+      "I hoped for better from you. I'm afraid I'll have to drop the offer.",
     ],
     standard: [
-      "That crosses a line. The new terms reflect the breach.",
-      "Poor form. I’m cutting the offer significantly.",
+      "You know what, that crosses a line. I'm redoing the offer in my favor.",
+      "Yeah, no. I’m cutting the offer significantly.",
       "You’re lucky I’m still negotiating at all. Consider this a warning cut.",
-      "Blatant manipulation has consequences. My offer severely reduced.",
+      "I can spot a bluff from across the room. You'll have to pay for that.",
       "That was more performance than logic. The deal’s worse for it.",
     ],
   },
@@ -286,7 +392,7 @@ export const haggleQuotes: Record<string, Record<string, string[]>> = {
       "You’ve insulted both my trade and my time. Pay the fine or take your tricks elsewhere.",
       "Unforgivable. I’ve barred better traders for less. This shop is closed to you until restitution is made.",
       "You’ve crossed the line from negotiation into offense. There’s a fee if you want that door to open again.",
-      "That wasn’t a mistake. That was an insult. You’ll pay to be heard again, if ever.",
+      "Don't mistake this for negotiation. You insulted me. There's a fee for that.",
       "Leave. Now. You’ll not be welcome here again until the fine is paid and maybe not even then.",
     ],
     generous: [
@@ -294,14 +400,14 @@ export const haggleQuotes: Record<string, Record<string, string[]>> = {
       "That hurt more than I expected. I can't deal with you again until you’ve made it right.",
       "I don’t deserve that kind of treatment. Pay the fine, and maybe we can talk.",
       "That was crueler than you know. It'll take more than coin to undo it, but coin’s a start.",
-      "I trusted you. That was my mistake. You’ll need to earn your way back in, starting with the fee.",
+      "I trusted you. That was my mistake. You’ll need to buy my trust back with a hefty fine.",
     ],
     standard: [
-      "That breach of conduct is unacceptable. You’re barred until a fine is paid.",
-      "Negotiation has rules. You broke them. This deal—and this door—is closed.",
-      "You’ve disrespected the terms and the trader. Reentry requires restitution.",
-      "This isn’t how trade works. Consider this a formal lockout until the fine is settled.",
-      "That was a violation, not an argument. You’re out until you pay to come back in.",
+      "You know what? We're done here. Pay the fine if you want this door open again.",
+      "I'm offended you thought that would work. Pay my fine, or get out of my shop.",
+      "I do not deal with people who trade like that. Come back when the fine's paid, and we'll see.",
+      "You clearly don't know how trade works. Pay my fine or don't come back.",
+      "What? That is not how haggling works. At all. Door's shut until you settle up.",
     ],
   },
 };
@@ -431,7 +537,7 @@ export const postHaggleFailureDescriptions: Record<string, string[]> = {
 ],
 
   reserved: [
-  "shows no reaction, but the cold in {possessive} posture says enough",
+  "shows no reaction, but {possessive} posture says enough",
   "remains still, though the silence now feels tense and final",
   "gives you a long, unreadable look. It doesn’t feel like approval",
   "keeps {possessive} expression neutral, but there's been a shift in the air",
@@ -441,15 +547,15 @@ export const postHaggleFailureDescriptions: Record<string, string[]> = {
   doubtful: [
   "narrows {possessive} eyes. Your failure confirms {possessive} doubts",
   "shakes {possessive} head in disapproval, clearly unimpressed",
-  "scoffs, your attempt doing nothing to ease {possessive} suspicion",
+  "scoffs at your attempt, which is doing nothing to ease {possessive} suspicion",
   "levels you with a stare, your words only deepening {possessive} mistrust",
   "keeps a wary expression.Your failure just made things worse",
 ],
 
   dismissive: [
   "scowls, your failed pitch sealing {possessive} disdain",
-  "rolls {possessive} eyes without restraint. You're not worth the effort",
-  "snorts, clearly offended you even tried that",
+  "rolls {possessive} eyes without restraint and crossed {possessive} arms",
+  "snorts, clearly offended at your your attempt to haggle",
   "turns away mid-sentence, done entertaining nonsense",
   "glares, your failure confirming what {pronoun} suspected all along",
 ],

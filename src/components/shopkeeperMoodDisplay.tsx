@@ -1,5 +1,5 @@
 // components/shopkeeperMoodDisplay.tsx
-import React from "react";
+import React, { useMemo } from "react";
 import Tooltip from './tooltip';
 import { getShopkeeperPronouns } from "../utils/shopGeneration";
 import { HaggleResult } from "./shoppingCart";
@@ -61,6 +61,14 @@ const getDisplayMood = (baseMood: string, charisma: number): string => {
   return moodScale[newIndex];
 };
 
+// Move a mood up (positive) or down (negative) the scale, clamped at the ends
+export const shiftMood = (mood: string, steps: number): string => {
+  const currentIndex = moodScale.indexOf(mood);
+  const start = currentIndex === -1 ? moodScale.indexOf("reserved") : currentIndex;
+  const newIndex = Math.max(0, Math.min(moodScale.length - 1, start + steps));
+  return moodScale[newIndex];
+};
+
 export const setMoodWithCharisma = (
   baseMood: string,
   charisma: number,
@@ -84,30 +92,38 @@ const ShopkeeperMoodDisplay: React.FC<shopkeeperMoodDisplayProps> = ({
   currentHaggleQuote = "",
   mode = 'buying'
 }) => {
-  if (!shopkeeper) return null;
+  const displayMood = getDisplayMood(shopkeeperMood, playerCharisma);
 
-  console.log('ShopkeeperMoodDisplay props:', {
-    mode,
-    shopkeeperMood,
-    playerCharisma,
-    displayMood: getDisplayMood(shopkeeperMood, playerCharisma)
-  });
+  // Pick the flavor text once per mood/shopkeeper, not on every re-render
+  const descriptions = useMemo(
+    () =>
+      shopkeeper
+        ? getShopkeeperDescriptions(
+            displayMood,
+            shopkeeper.priceModifier,
+            getShopkeeperPronouns(shopkeeper.name),
+            shopkeeper.shopType
+          )
+        : null,
+    [displayMood, shopkeeper?.name, shopkeeper?.shopType, shopkeeper?.priceModifier]
+  );
+
+  // Same for the post-haggle reaction line
+  const reactionDescription = useMemo(() => {
+    if (!shopkeeper || !lastHaggleResult) return "";
+    const reactionPronouns = getShopkeeperPronouns(shopkeeper.name);
+    return lastHaggleResult.success
+      ? getPostHaggleDescription(displayMood, reactionPronouns)
+      : getProcessedPostHaggleFailureDescription(displayMood, reactionPronouns);
+  }, [lastHaggleResult, displayMood, shopkeeper?.name]);
+
+  if (!shopkeeper || !descriptions) return null;
 
   const pronouns = getShopkeeperPronouns(shopkeeper.name);
-  const displayMood = getDisplayMood(shopkeeperMood, playerCharisma);
-  
-  console.log('ShopkeeperMoodDisplay rendering:', {
-    mode,
-    shopkeeperMood,
-    displayMood,
-    shouldShowMoodBadge: true, // Mood badge should always show
-    shouldShowHagglingBadge: mode === 'selling'
-  });
-
   const {
     moodDescription: processedMoodDesc,
     personalityDescription: processedPersonalityDesc,
-  } = getShopkeeperDescriptions(displayMood, shopkeeper.priceModifier, pronouns);
+  } = descriptions;
 
   return (
     <div className="text-sm text-stone-600 dark:text-gray-300 border rounded-lg border-stone-300 p-4 mb-4">
@@ -194,24 +210,16 @@ const ShopkeeperMoodDisplay: React.FC<shopkeeperMoodDisplayProps> = ({
       }
       
       if (isHaggleReaction && lastHaggleResult) {
-  const result = lastHaggleResult as HaggleResult; // Type assertion
-  if (result.success) {
-    return (
-      <>
-        {shopkeeper.name.split(" ")[0]} {getPostHaggleDescription(displayMood, pronouns)}.
-        <span className="italic"> "{currentHaggleQuote}"</span>
-      </>
-    );
-  } else {
-    return (
-      <>
-        {shopkeeper.name.split(" ")[0]} {getProcessedPostHaggleFailureDescription(displayMood, pronouns)}.
-        <span className="italic"> "{currentHaggleQuote}"</span>
-      </>
-    );
-        }
+        return (
+          <>
+            {shopkeeper.name.split(" ")[0]} {reactionDescription}.
+            {currentHaggleQuote && (
+              <span className="italic"> "{currentHaggleQuote}"</span>
+            )}
+          </>
+        );
       }
-      
+
       // Default: Normal interaction description
       return (
         <>

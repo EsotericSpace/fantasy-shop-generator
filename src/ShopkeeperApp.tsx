@@ -85,6 +85,7 @@ import {
   LockKeyOpenIcon,
 } from "@phosphor-icons/react";
 import { DARK_MODE_KEY } from "./consts/localStorage.tsx";
+import { shiftMood, moodScale } from "./components/shopkeeperMoodDisplay";
 
 const PhosphorIcon = ({ icon: Icon, weight = "thin", size = 20, ...props }) => (
   <Icon weight={weight} size={size} {...props} />
@@ -114,6 +115,26 @@ const getHagglingStyle = (settlementSize, priceModifier) => {
                     
   return hagglingStyles[settlementSize]?.[refinement] || 
          hagglingStyles.town.standard;
+};
+
+// How a haggle attempt moves the shopkeeper's mood (used for buying and selling)
+const getMoodAfterHaggle = (
+  mood: string,
+  roll: number,
+  success: boolean,
+  margin: number // total minus DC
+): string => {
+  if (roll === 1) return "dismissive";
+  if (roll === 20) return shiftMood(mood, 2);
+  if (success) {
+    if (margin >= 10) return shiftMood(mood, 1);
+    // A narrow win still softens a sour mood
+    if (margin < 5 && moodScale.indexOf(mood) < moodScale.indexOf("reserved")) {
+      return shiftMood(mood, 1);
+    }
+    return mood;
+  }
+  return shiftMood(mood, margin <= -10 ? -2 : -1);
 };
 
 function ShopkeeperGenerator() {
@@ -435,7 +456,7 @@ const getDisplayMood = (baseMood: string, charisma: number): string => {
     setIsLockedOut(false);
     setApologyFee(0);
     setRelationshipStatus("neutral");
-    setShopkeeperMood("neutral");
+    setShopkeeperMood("reserved");
     setLockoutReason("");
     setHaggleAttempts(3);
     const hagglingStyle = getHagglingStyle(settlementSize, shopkeeper.priceModifier);
@@ -500,6 +521,7 @@ const getDisplayMood = (baseMood: string, charisma: number): string => {
     setBuyingIsLockedOut(true);
     setBuyingCritFailCount((prev) => prev + 1);
     setBuyingRelationshipStatus("offended");
+    setShopkeeperMood("dismissive");
     setBuyingLockoutReason(`You've gravely insulted ${shopkeeper.name.split(" ")[0]}!`);
 
     setBuyingLastHaggleResult({
@@ -510,6 +532,8 @@ const getDisplayMood = (baseMood: string, charisma: number): string => {
       bonusPercent: 0,
       resultText: `Critical failure! ${shopkeeper.name.split(" ")[0]} is deeply offended by your negotiation attempt.`,
     });
+    setCurrentHaggleQuote(getHaggleQuote("criticalFailure", shopkeeper.priceModifier));
+    setIsHaggleReaction(true);
     setBuyingHaggleAttempts(buyingHaggleAttempts - 1);
     setTimeout(() => setBuyingIsHaggling(false), 1000);
     return;
@@ -569,6 +593,14 @@ const getDisplayMood = (baseMood: string, charisma: number): string => {
   setBuyingHaggleAttempts((prev) => prev - 1);
   setBuyingCurrentHaggleDC((prev) => prev + 2);
   setBuyingRelationshipStatus(newRelationship);
+  setShopkeeperMood(getMoodAfterHaggle(shopkeeperMood, roll, success, total - buyingCurrentHaggleDC));
+  setCurrentHaggleQuote(
+    getHaggleQuote(
+      getHaggleResultType(roll, total, buyingCurrentHaggleDC, success),
+      shopkeeper.priceModifier
+    )
+  );
+  setIsHaggleReaction(true);
 
   // Apply bonus/penalty to all cart items
   setCartItems((prev) =>
@@ -661,10 +693,10 @@ const addItemToSell = (item) => {
       return updated;
     } else {
       // New item! Possibly improve mood
-      if (shopkeeperMood === "irritated" && Math.random() > 0.5) {
-        setShopkeeperMood("skeptical");
-      } else if (shopkeeperMood === "skeptical" && Math.random() > 0.7) {
-        setShopkeeperMood("neutral");
+      if (shopkeeperMood === "dismissive" && Math.random() > 0.5) {
+        setShopkeeperMood("doubtful");
+      } else if (shopkeeperMood === "doubtful" && Math.random() > 0.7) {
+        setShopkeeperMood("reserved");
       }
 
       // Always use true market price for display and calculations
@@ -743,7 +775,7 @@ const addItemToSell = (item) => {
       setIsLockedOut(true);
       setCritFailCount((prev) => prev + 1);
       setRelationshipStatus("offended");
-      setShopkeeperMood("irritated");
+      setShopkeeperMood("dismissive");
       setLockoutReason(
         `You've gravely insulted ${shopkeeper.name.split(" ")[0]}!`
       );
@@ -758,6 +790,8 @@ const addItemToSell = (item) => {
           shopkeeper.name.split(" ")[0]
         } is deeply offended by your negotiation attempt.`,
       });
+      setCurrentHaggleQuote(getHaggleQuote("criticalFailure", shopkeeper.priceModifier));
+      setIsHaggleReaction(true);
 
       setTimeout(() => setIsHaggling(false), 1000);
       return;
@@ -770,7 +804,7 @@ const addItemToSell = (item) => {
 
     let bonusPercent = 0;
     let resultText = "";
-    let newMood = shopkeeperMood;
+    const newMood = getMoodAfterHaggle(shopkeeperMood, roll, success, total - currentHaggleDC);
     let newRelationship = relationshipStatus;
 
     if (success) {
@@ -782,7 +816,6 @@ const addItemToSell = (item) => {
         resultText = `Critical success! ${
           shopkeeper.name.split(" ")[0]
         } is thoroughly impressed by your negotiation skills.`;
-        newMood = "pleased";
         newRelationship =
           relationshipStatus === "neutral" ? "trusted" : relationshipStatus;
       } else if (successMargin >= 10) {
@@ -790,37 +823,16 @@ const addItemToSell = (item) => {
         resultText = `Excellent haggling! ${
           shopkeeper.name.split(" ")[0]
         } is impressed.`;
-        if (roll >= 18 || successMargin >= 15) {
-          newMood =
-            shopkeeperMood === "neutral"
-              ? "satisfied"
-              : shopkeeperMood === "satisfied"
-              ? "pleased"
-              : shopkeeperMood;
-        } else {
-          newMood = shopkeeperMood;
-        }
       } else if (successMargin >= 5) {
         bonusPercent = 10;
         resultText = `Good negotiation. ${
           shopkeeper.name.split(" ")[0]
         } nods approvingly.`;
-        newMood = shopkeeperMood;
       } else {
         bonusPercent = 5;
         resultText = `Decent argument. ${
           shopkeeper.name.split(" ")[0]
         } considers your point.`;
-        if (
-          shopkeeperMood === "neutral" ||
-          shopkeeperMood === "satisfied" ||
-          shopkeeperMood === "pleased"
-        ) {
-          newMood = shopkeeperMood;
-        } else {
-          newMood =
-            shopkeeperMood === "irritated" ? "skeptical" : shopkeeperMood;
-        }
       }
     } else {
       // Failed haggle - apply negative penalties
@@ -830,7 +842,6 @@ const addItemToSell = (item) => {
         resultText = `Poor attempt. ${
           shopkeeper.name.split(" ")[0]
         } is annoyed and lowers their offer.`;
-        newMood = "irritated";
         newRelationship =
           relationshipStatus === "trusted"
             ? "neutral"
@@ -842,14 +853,6 @@ const addItemToSell = (item) => {
         resultText = `Nice try, but ${
           shopkeeper.name.split(" ")[0]
         } isn't convinced and reduces their offer slightly.`;
-        newMood =
-          shopkeeperMood === "pleased"
-            ? "satisfied"
-            : shopkeeperMood === "satisfied"
-            ? "neutral"
-            : shopkeeperMood === "neutral"
-            ? "skeptical"
-            : shopkeeperMood;
       }
     }
 
@@ -866,6 +869,12 @@ const addItemToSell = (item) => {
     setCurrentHaggleDC((prev) => prev + 2);
     setShopkeeperMood(newMood);
     setRelationshipStatus(newRelationship);
+    setCurrentHaggleQuote(
+      getHaggleQuote(
+        getHaggleResultType(roll, total, currentHaggleDC, success),
+        shopkeeper.priceModifier
+      )
+    );
     setIsHaggleReaction(true);
 
     // Apply bonus/penalty to all items
@@ -908,14 +917,17 @@ const addItemToSell = (item) => {
 
     // Improve shopkeeper mood based on sale value
     if (totalValue >= 100) {
-      // Large sale - big mood improvement
-      setShopkeeperMood("pleased");
-    } else if (totalValue >= 50 || shopkeeperMood === "skeptical") {
-      // Medium sale or recover from skeptical
-      setShopkeeperMood("satisfied");
-    } else if (shopkeeperMood === "irritated") {
-      // Small sale but recover from irritated
-      setShopkeeperMood("neutral");
+      // Large sale - mood improves a step
+      setShopkeeperMood(shiftMood(shopkeeperMood, 1));
+    } else if (
+      totalValue >= 50 ||
+      shopkeeperMood === "dismissive" ||
+      shopkeeperMood === "doubtful"
+    ) {
+      // Medium sale, or any sale from a bad mood - recover to at least reserved
+      if (moodScale.indexOf(shopkeeperMood) < moodScale.indexOf("reserved")) {
+        setShopkeeperMood(shiftMood(shopkeeperMood, 1));
+      }
     }
 
     setSellingItems([]);
@@ -1267,7 +1279,7 @@ setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
     // setIsLockedOut(false); // DON'T reset this
     setApologyFee(apologyFee); // Keep the fee
     setRelationshipStatus("offended"); // Relationship stays damaged
-    setShopkeeperMood("irritated");
+    setShopkeeperMood("dismissive");
     setIsHaggleReaction(true);
     setLockoutReason(
       `${
@@ -1432,6 +1444,8 @@ setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
     console.log("HTML classes:", document.documentElement.className);
   }, [isDarkMode]);
 
+  // Roll a starting mood whenever the shopkeeper, shop type, or pricing changes.
+  // Haggling and sales move it from there. Charisma is applied at display time.
   useEffect(() => {
   if (!shopkeeper) return;
 
@@ -1446,26 +1460,9 @@ setCurrentHaggleDC(10 + hagglingStyle.dcModifier);
     baseMood = moodRoll > 0.6 ? "open" : moodRoll > 0.2 ? "reserved" : "welcoming";
   }
 
-  const applyCharismaMoodModifier = (baseMood, charisma) => {
-    const moodScale = ["dismissive", "doubtful", "reserved", "open", "welcoming"];
-    const currentIndex = moodScale.indexOf(baseMood);
-    if (currentIndex === -1) return baseMood;
-
-    let modifier = 0;
-    if (charisma >= 3) {
-      modifier = Math.floor((charisma - 2) / 2);
-    } else if (charisma <= -3) {
-      modifier = Math.ceil((charisma + 2) / 2);
-    }
-
-    const newIndex = Math.max(0, Math.min(moodScale.length - 1, currentIndex + modifier));
-    return moodScale[newIndex];
-  };
-
-  const finalMood = applyCharismaMoodModifier(baseMood, playerCharisma);
-  setShopkeeperMood(finalMood);
+  setShopkeeperMood(baseMood);
   setIsHaggleReaction(false);
-}, [shopkeeper, playerCharisma]);
+}, [shopkeeper?.name, shopkeeper?.shopType, shopkeeper?.priceModifier]);
 
 useEffect(() => {
   if (!shopkeeper) return;
@@ -1479,12 +1476,13 @@ useEffect(() => {
     getShopkeeperDescriptions(
       displayMood,
       shopkeeper.priceModifier,
-      pronouns
+      pronouns,
+      shopkeeper.shopType
     );
 
   setSelectedMoodDesc(moodDescription);
   setSelectedPersonalityDesc(personalityDescription);
-}, [shopkeeperMood, shopkeeper, playerCharisma]);
+}, [shopkeeperMood, shopkeeper?.name, shopkeeper?.shopType, shopkeeper?.priceModifier, playerCharisma]);
 
 useEffect(() => {
   if (!shopkeeper) return;
@@ -1568,6 +1566,7 @@ useEffect(() => {
     setBuyingIsLockedOut(false);
     setBuyingCritFailCount(0);
     setBuyingHaggleAttempts(3);
+    setShopkeeperMood("reserved");
     resetBuyingHaggleState();
   }
 };
@@ -1581,6 +1580,7 @@ const handleBuyingCharismaCheck = () => {
     setBuyingIsLockedOut(false);
     setBuyingCritFailCount(0);
     setBuyingHaggleAttempts(2);
+    setShopkeeperMood("reserved");
   }
 };
 

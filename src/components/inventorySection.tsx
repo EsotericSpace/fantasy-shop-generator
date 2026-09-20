@@ -388,7 +388,7 @@ const InventorySection: React.FC<InventorySectionProps> = ({
         cartChangeDescription={cartChangeDescription}
         cartChangeQuote={cartChangeQuote}
         isHaggleReaction={isHaggleReaction}
-        lastHaggleResult={lastHaggleResult}
+        lastHaggleResult={buyingLastHaggleResult}
         currentHaggleQuote={currentHaggleQuote}
         mode="buying"
       />
